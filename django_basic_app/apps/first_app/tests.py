@@ -52,7 +52,7 @@ class TestFirstAppAPI(TestCase):
         FirstApp.objects.create(name='test1', description='Description 1')
         FirstApp.objects.create(name='test2', description='Description 2')
 
-        response = self.api_client.get('/first_App/')
+        response = self.api_client.get('/first_app/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('results', response.data)
@@ -61,7 +61,7 @@ class TestFirstAppAPI(TestCase):
     def test_create_instance(self):
         """Test creating a new FirstApp instance."""
         data = {'name': 'New Item', 'description': 'New Description'}
-        response = self.api_client.post('/first_App/', data, format='json')
+        response = self.api_client.post('/first_app/', data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], 'New Item')
@@ -70,7 +70,7 @@ class TestFirstAppAPI(TestCase):
     def test_retrieve_instance(self):
         """Test retrieving a single instance."""
         instance = FirstApp.objects.create(name='test1', description='Test')
-        response = self.api_client.get(f'/first_App/{instance.pk}/')
+        response = self.api_client.get(f'/first_app/{instance.pk}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], instance.pk)
@@ -82,7 +82,7 @@ class TestFirstAppAPI(TestCase):
         FirstApp.objects.create(name='test2', description='Test 2')
         FirstApp.objects.create(name='other', description='Other')
 
-        response = self.api_client.get('/first_App/?name=test*')
+        response = self.api_client.get('/first_app/?name=test*')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 2)
@@ -91,7 +91,7 @@ class TestFirstAppAPI(TestCase):
         """Test updating an instance."""
         instance = FirstApp.objects.create(name='Original', description='Original')
         data = {'name': 'Updated', 'description': 'Updated'}
-        response = self.api_client.put(f'/first_App/{instance.pk}/', data, format='json')
+        response = self.api_client.put(f'/first_app/{instance.pk}/', data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         instance.refresh_from_db()
@@ -101,7 +101,7 @@ class TestFirstAppAPI(TestCase):
         """Test deleting an instance."""
         instance = FirstApp.objects.create(name='To Delete')
         pk = instance.pk
-        response = self.api_client.delete(f'/first_App/{pk}/')
+        response = self.api_client.delete(f'/first_app/{pk}/')
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(FirstApp.objects.filter(pk=pk).exists())
@@ -109,5 +109,5 @@ class TestFirstAppAPI(TestCase):
     def test_requires_authentication(self):
         """Test that endpoints require authentication."""
         client = APIClient()  # No authentication
-        response = client.get('/first_App/')
+        response = client.get('/first_app/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

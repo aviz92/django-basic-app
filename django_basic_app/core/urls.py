@@ -23,6 +23,6 @@ urlpatterns = [
     path("schema/", Schema.as_view()),  # http://127.0.0.1:8000/schema/
 
     # App paths
-    path('first_App/', include('apps.first_app.urls')),
+    path('first_app/', include('apps.first_app.urls')),
     path('second_app/', include('apps.second_app.urls')),
 ]
