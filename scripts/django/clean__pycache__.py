@@ -21,7 +21,9 @@ def delete_pycache_folder(root_dir: Path) -> None:
 
 
 def main() -> None:
-    root_dir = Path(__file__).parent.parent
+    root_dir = Path(__file__).parent.parent.parent
+    print(f"Root directory: {root_dir}")
+    delete_pycache_folder(root_dir)
     delete_pycache_folder(root_dir=root_dir)
 
 
