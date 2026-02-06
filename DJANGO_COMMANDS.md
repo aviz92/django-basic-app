@@ -4,7 +4,7 @@ This document provides a list of common Django management commands that can be u
 ## Common Django Commands
 
 ### App Management
-- `python manage.py startproject <project_name>`: Creates a new Django project with the specified name.
+- `django-admin startproject <project_name>`: Creates a new Django project with the specified name.
 - `python manage.py startapp <app_name>`: Creates a new Django app with the specified name.
 - `python manage.py runserver`: Starts the development server.
 
