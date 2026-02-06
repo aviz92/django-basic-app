@@ -13,6 +13,7 @@ Provides comprehensive CRUD operations with:
 import re
 from typing import Any, Callable, Optional, Type
 
+from custom_python_logger import get_logger
 from django.core.exceptions import FieldDoesNotExist, ValidationError as DjangoValidationError
 from django.db import IntegrityError, models
 from rest_framework import status
@@ -22,9 +23,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
 
-from custom_python_logger import build_logger
-
-logger = build_logger(__name__)
+logger = get_logger(__name__)
 
 RESERVED_PARAMS = {'page', 'page_size', 'ordering', 'format'}
 RELATED_LOOKUP = '__'
