@@ -76,6 +76,27 @@ class CRUDUtils:
             return None
 
     @staticmethod
+    def apply_pagination(
+        queryset: models.QuerySet,
+        request: Request,
+        serializer_class: Type[ModelSerializer],
+        pagination_class: Optional[Type[PageNumberPagination]] = None,
+    ) -> Response:
+        """Apply pagination to a queryset and return a paginated response."""
+
+        pagination_class = pagination_class or StandardResultsSetPagination
+
+        paginator = pagination_class()
+        page = paginator.paginate_queryset(queryset=queryset, request=request)
+        if page is not None:
+            serializer = serializer_class(page, context={'request': request}, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        # No pagination, return all results
+        serializer = serializer_class(queryset, context={'request': request}, many=True)
+        return Response(serializer.data)
+
+    @staticmethod
     def _wildcard_to_regex(pattern: str) -> str:
         """Convert wildcard pattern to regex pattern."""
 
@@ -301,102 +322,37 @@ class CRUDUtils:
     def _build_queryset(
         model_class: Type[models.Model],
         queryset_hook: Optional[Callable] = None,
-        select_related: Optional[list[str]] = None,
-        prefetch_related: Optional[list[str]] = None,
     ) -> models.QuerySet:  # constant filter: queryset_hook=lambda: FirstApp.objects.filter(is_active=True)
-        """Build and optimize a queryset."""
+        """Build the initial queryset for list retrieval, allowing for optional customization via a hook."""
 
         if queryset_hook:
             queryset = queryset_hook()
         else:
             queryset = model_class.objects.all()
-
-        if select_related:
-            queryset = queryset.select_related(*select_related)
-        if prefetch_related:
-            queryset = queryset.prefetch_related(*prefetch_related)
-
         return queryset
-
-    @staticmethod
-    def apply_pagination(
-        queryset: models.QuerySet,
-        request: Request,
-        serializer_class: Type[ModelSerializer],
-        pagination_class: Optional[Type[PageNumberPagination]] = None,
-    ) -> Response:
-        """Apply pagination to a queryset and return a paginated response."""
-
-        pagination_class = pagination_class or StandardResultsSetPagination
-
-        paginator = pagination_class()
-        page = paginator.paginate_queryset(queryset=queryset, request=request)
-        if page is not None:
-            serializer = serializer_class(page, context={'request': request}, many=True)
-            return paginator.get_paginated_response(serializer.data)
-
-        # No pagination, return all results
-        serializer = serializer_class(queryset, context={'request': request}, many=True)
-        return Response(serializer.data)
 
     @staticmethod
     def get(
         request: Request,
         model_class: Type[models.Model],
         serializer_class: Type[ModelSerializer],
-        pagination_class: Optional[Type[PageNumberPagination]] = None,
         queryset_hook: Optional[Callable] = None,
         ordering_field: Optional[str] = 'pk',
-        select_related: Optional[list[str]] = None,
-        prefetch_related: Optional[list[str]] = None,
+        pagination_class: Optional[Type[PageNumberPagination]] = None,
         **kwargs: Any,
     ) -> Response:
-        """Retrieve a single instance or paginated list of instances.
+        """Retrieve a single instance or paginated list of instances."""
 
-        Supports:
-        - Single instance: GET /resource/<pk>/
-        - List with pagination: GET /resource/?page=1&page_size=20
-        - Filtering: GET /resource/?name=something
-        - Ordering: GET /resource/?ordering=-created_at,name
-
-        Args:
-            request: The HTTP request object.
-            model_class: The Django model class to query.
-            serializer_class: The DRF serializer class for serialization.
-            pagination_class: Optional pagination class (defaults to StandardResultsSetPagination).
-            queryset_hook: Optional function to customize base queryset.
-            ordering_field: Default field for ordering if no 'ordering' param provided (default is 'pk').
-            select_related: List of ForeignKey/OneToOne fields to optimize.
-            prefetch_related: List of ManyToMany/ReverseForeignKey fields to optimize.
-            **kwargs: Additional keyword arguments, including 'pk' for single instance retrieval.
-
-        Returns:
-            Response: HTTP 200 with serialized data, or HTTP 404 if instance not found.
-        """
         if pk := kwargs.get('pk'):
-            instance = CRUDUtils._get_instance_by_pk(
-                model_class=model_class,
-                pk=pk,
-                select_related=select_related,
-                prefetch_related=prefetch_related,
-            )
+            instance = CRUDUtils._get_instance_by_pk(model_class=model_class, pk=pk)
             if not instance:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             serializer = serializer_class(instance, context={'request': request})
             return Response(serializer.data)
         else:
-            # List retrieval with pagination, filtering, and ordering
-            queryset = CRUDUtils._build_queryset(
-                model_class=model_class,
-                queryset_hook=queryset_hook,
-                select_related=select_related,
-                prefetch_related=prefetch_related,
-            )
-
+            queryset = CRUDUtils._build_queryset(model_class=model_class, queryset_hook=queryset_hook)
             queryset = CRUDUtils._apply_filtering(queryset=queryset, request=request)
-
             queryset = queryset.order_by(ordering_field)
-
             return CRUDUtils.apply_pagination(
                 queryset=queryset,
                 request=request,
