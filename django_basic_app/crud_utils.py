@@ -34,18 +34,16 @@ class CRUDUtils:
         Returns:
             Response: HTTP 200 with serialized data, or HTTP 404 if instance not found.
         """
-        pk = kwargs.get('pk')
-        if not pk:
-            many = True
-            queryset = model_class.objects.all()
-        else:
+        if pk := kwargs.get('pk'):
             many = False
             try:
                 queryset = model_class.objects.get(pk=pk)
             except model_class.DoesNotExist:
                 logger.warning(f"{model_class.__name__} with pk={pk} not found")
                 return Response(status=status.HTTP_404_NOT_FOUND)
-
+        else:
+            many = True
+            queryset = model_class.objects.all()
         serializer = serializer_class(queryset, context={'request': request}, many=many)
         return Response(serializer.data)
 
@@ -89,8 +87,7 @@ class CRUDUtils:
         Returns:
             Response: HTTP 200 with updated instance data, HTTP 404 if not found, or HTTP 400 with validation errors.
         """
-        pk = kwargs.get('pk')
-        if not pk:
+        if not (pk := kwargs.get('pk')):
             logger.warning(f"PUT request missing pk for {model_class.__name__}")
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -127,8 +124,7 @@ class CRUDUtils:
         Returns:
             Response: HTTP 200 with updated instance data, HTTP 404 if not found, or HTTP 400 with validation errors.
         """
-        pk = kwargs.get('pk')
-        if not pk:
+        if not (pk := kwargs.get('pk')):
             logger.warning(f"PATCH request missing pk for {model_class.__name__}")
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -163,8 +159,7 @@ class CRUDUtils:
         Returns:
             Response: HTTP 204 on successful deletion, HTTP 404 if instance not found.
         """
-        pk = kwargs.get('pk')
-        if not pk:
+        if not (pk := kwargs.get('pk')):
             logger.warning(f"DELETE request missing pk for {model_class.__name__}")
             return Response(status=status.HTTP_404_NOT_FOUND)
 
