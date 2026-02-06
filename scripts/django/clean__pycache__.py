@@ -6,7 +6,7 @@ IGNORED_DIRS = ['.venv']
 
 
 def delete_pycache_folder(root_dir: Path) -> None:
-    for dirpath, dirnames, filenames in os.walk(root_dir):
+    for dirpath, dirnames, _ in os.walk(root_dir):
         if any(ignored_dir in dirpath for ignored_dir in IGNORED_DIRS):
             continue
 
