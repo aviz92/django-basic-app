@@ -14,6 +14,7 @@ keywords = ["development", "python", "django"]
 
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Topic :: Software Development :: Libraries",
     "Intended Audience :: Developers",
     "Framework :: Pytest",
     "Programming Language :: Python :: 3.12",
