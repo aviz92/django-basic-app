@@ -15,8 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from schema_graph.views import Schema
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("schema/", Schema.as_view()),  # http://127.0.0.1:8000/schema/
+
+    # App paths
+    path('first_App/', include('apps.first_app.urls')),
 ]

@@ -9,6 +9,6 @@ router = routers.DefaultRouter()
 app_name = 'apps.first_app'
 
 urlpatterns = [
-    path('', views.FirstAppView.as_view()),
-    path('<int:pk>/', views.FirstAppView.as_view()),
+    path('', views.FirstAppListView.as_view()),
+    path('<int:pk>/', views.FirstAppDetailView.as_view()),
 ]
