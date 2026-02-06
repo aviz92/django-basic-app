@@ -51,4 +51,6 @@ where = ["."]
 namespaces = false
 
 [project.scripts]  # must using "uv sync" or "uv pip install -e ." first
-run_pytest_marker = "scripts.run_pytest_marker:main"
+run_pytest_marker = "scripts.ci.run_pytest_marker:main"
+clean_pycache = "scripts.django.clean__pycache__:main"
+clean_migrations = "scripts.django.clean_migrations:main"
