@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django_filters',
 
     'apps.first_app',
+    'apps.second_app',
 ]
 
 MIDDLEWARE = [

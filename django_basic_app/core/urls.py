@@ -24,4 +24,5 @@ urlpatterns = [
 
     # App paths
     path('first_App/', include('apps.first_app.urls')),
+    path('second_app/', include('apps.second_app.urls')),
 ]
