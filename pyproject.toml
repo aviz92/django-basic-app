@@ -50,7 +50,7 @@ Issues = "https://github.com/aviz92/django-basic-app/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-#include = ["core*"]
+#include = ["django_basic_app*"]
 namespaces = false
 
 [project.scripts]  # must using "uv sync" or "uv pip install -e ." first
