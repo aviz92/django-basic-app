@@ -3,9 +3,13 @@
 
 import os
 import sys
+
+from custom_python_logger import build_logger
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = build_logger("DjangoManage")
 
 
 def main():

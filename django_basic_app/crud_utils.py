@@ -8,9 +8,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
 
-from custom_python_logger import build_logger
+from custom_python_logger import get_logger
 
-logger = build_logger(__name__)
+logger = get_logger(__name__)
 
 
 class CRUDUtils:
