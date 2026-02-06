@@ -26,7 +26,6 @@ from custom_python_logger import build_logger
 
 logger = build_logger(__name__)
 
-# Reserved query parameters that shouldn't be treated as field filters
 RESERVED_PARAMS = {'page', 'page_size', 'ordering', 'format'}
 RELATED_LOOKUP = '__'
 OPERATOR_MAPPING = {
