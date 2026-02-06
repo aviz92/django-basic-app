@@ -26,3 +26,4 @@ tasks:
       - sleep 5
       - uv cache clean
       - uv sync
+      - task: infra:deploy:clean
