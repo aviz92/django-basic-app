@@ -2,13 +2,12 @@
 
 from typing import Any
 
+from drf_easy_crud import CRUDUtils
 from rest_framework import generics
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-
-from crud_utils import CRUDUtils
 
 from .models import FirstApp
 from .serializers import FirstAppSerializer
