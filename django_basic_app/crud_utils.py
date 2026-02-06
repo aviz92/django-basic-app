@@ -1,4 +1,4 @@
-"""View functions utility class for common CRUD operations."""
+"""View functions utility class for common CRUD (Create, Read, Update, Delete) operations in Django REST Framework."""
 
 from typing import Any, Type
 
