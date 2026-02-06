@@ -1,4 +1,16 @@
-"""Comprehensive tests for FirstApp views and models."""
+"""
+Comprehensive tests for FirstApp views and models.
+
+# all tests
+cd django_basic_app
+uv run python manage.py test apps.first_app.tests
+
+# specific app tests
+uv run python manage.py test apps.first_app.tests
+
+# specific test case
+uv run python manage.py test apps.first_app.tests.TestFirstAppAPI.test_list_all_instances
+"""
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
