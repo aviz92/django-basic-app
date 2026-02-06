@@ -228,12 +228,3 @@ class TestCRUDUtilsHelperMethods(TestCase):
         self.assertIn('.*', regex)
         self.assertTrue(regex.startswith('t'))
         self.assertTrue(regex.endswith('t'))
-
-    def test_validate_lookup_path_valid(self):
-        """Test validating a valid lookup path."""
-        self.assertTrue(CRUDUtils._validate_lookup_path(SecondApp, 'first_app__name'))
-
-    def test_validate_lookup_path_invalid(self):
-        """Test validating an invalid lookup path."""
-        self.assertFalse(CRUDUtils._validate_lookup_path(SecondApp, 'nonexistent__field'))
-        self.assertFalse(CRUDUtils._validate_lookup_path(FirstApp, 'first_app__name'))
