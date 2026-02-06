@@ -7,7 +7,7 @@ name = "django-basic-app"  # "django-basic-app-template"
 version = "0.0.1"
 description = "A basic Django app template for development projects"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Avi Zaguri" }, ]
 keywords = ["development", "python", "django"]
@@ -16,7 +16,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Framework :: Pytest",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
 dependencies = [
