@@ -17,6 +17,7 @@ from django.core.exceptions import FieldDoesNotExist, ValidationError as DjangoV
 from django.db import IntegrityError, models
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -45,17 +46,8 @@ class CRUDUtils:
         select_related: Optional[list[str]] = None,
         prefetch_related: Optional[list[str]] = None,
     ) -> Optional[models.Model]:
-        """Get a model instance by primary key with optional performance optimizations.
+        """Get a model instance by primary key with optional performance optimizations."""
 
-        Args:
-            model_class: The Django model class to query.
-            pk: Primary key value.
-            select_related: List of ForeignKey/OneToOne field names to optimize.
-            prefetch_related: List of ManyToMany/ReverseForeignKey field names to optimize.
-
-        Returns:
-            Model instance if found, None otherwise.
-        """
         try:
             queryset = model_class.objects.all()
             if select_related:
@@ -65,191 +57,6 @@ class CRUDUtils:
             return queryset.get(pk=pk)
         except model_class.DoesNotExist:
             logger.warning(f"{model_class.__name__} with pk={pk} not found")
-            return None
-
-    @staticmethod
-    def _build_queryset(
-        model_class: Type[models.Model],
-        queryset_hook: Optional[Callable] = None,
-        select_related: Optional[list[str]] = None,
-        prefetch_related: Optional[list[str]] = None,
-    ) -> models.QuerySet:
-        """Build and optimize a queryset.
-
-        Args:
-            model_class: The Django model class.
-            queryset_hook: Optional function to customize the base queryset.
-            select_related: List of ForeignKey/OneToOne field names to optimize.
-            prefetch_related: List of ManyToMany/ReverseForeignKey field names to optimize.
-
-        Returns:
-            Optimized queryset.
-        """
-        if queryset_hook:
-            queryset = queryset_hook()
-        else:
-            queryset = model_class.objects.all()
-
-        if select_related:
-            queryset = queryset.select_related(*select_related)
-        if prefetch_related:
-            queryset = queryset.prefetch_related(*prefetch_related)
-
-        return queryset
-
-    @staticmethod
-    def _apply_wildcard_filtering(
-        queryset: models.QuerySet,
-        request: Request,
-    ) -> models.QuerySet:
-        """Apply generic wildcard filtering directly to queryset.
-
-        Supports filtering for different field types:
-
-        Text fields (wildcard patterns):
-        - name=test*  -> name__istartswith=test (starts with)
-        - name=*test  -> name__iendswith=test (ends with)
-        - name=*test* -> name__icontains=test (contains)
-        - name=t*t    -> name__iregex (regex pattern matching, e.g., matches "test", "tart")
-        - name=test   -> name__iexact=test (exact match, default)
-
-        Number fields (comparison operators and ranges):
-        - age=25      -> exact match
-        - age=>=25    -> greater than or equal
-        - age=<=100   -> less than or equal
-        - age=>25     -> greater than
-        - age=<25     -> less than
-        - age=10-20   -> range (inclusive)
-
-        ForeignKey lookups:
-        - first_app__name=t* -> Filter by related ForeignKey field
-        - first_app__age=>=18 -> Filter by related number field
-
-        Works generically for any field on any model, including ForeignKey lookups.
-
-        Args:
-            queryset: The queryset to filter.
-            request: The HTTP request object.
-
-        Returns:
-            Filtered queryset (empty if field doesn't exist or no matches).
-        """
-        from django.db import models as django_models
-
-        query_params = request.query_params.copy()
-        model = queryset.model
-        model_fields = {f.name for f in model._meta.get_fields()}
-
-        # Reserved query parameters that shouldn't be treated as field filters
-        reserved_params = {'page', 'page_size', 'ordering', 'format'}
-
-        for param_name, param_value in query_params.items():
-            # Skip reserved params and empty values
-            if param_name in reserved_params or not param_value:
-                continue
-
-            # Check if this is a ForeignKey lookup (contains __)
-            is_related_lookup = '__' in param_name
-
-            if is_related_lookup:
-                # Validate ForeignKey lookup path exists
-                if not CRUDUtils._validate_lookup_path(model, param_name):
-                    # Invalid lookup path - return empty queryset
-                    return queryset.none()
-
-                # For related lookups, determine the target field type
-                target_field = CRUDUtils._get_lookup_target_field(model, param_name)
-                if target_field is None:
-                    # Field doesn't exist - return empty queryset
-                    return queryset.none()
-
-                # Apply wildcard filtering to related field
-                queryset = CRUDUtils._apply_wildcard_to_field(
-                    queryset, param_name, param_value, target_field, django_models
-                )
-            else:
-                # Direct field lookup
-                if param_name not in model_fields:
-                    # Field doesn't exist - return empty queryset
-                    return queryset.none()
-
-                # Get field type to determine appropriate lookup
-                try:
-                    field = model._meta.get_field(param_name)
-                except FieldDoesNotExist:
-                    # Field doesn't exist - return empty queryset
-                    return queryset.none()
-
-                # Apply wildcard filtering to direct field
-                queryset = CRUDUtils._apply_wildcard_to_field(
-                    queryset, param_name, param_value, field, django_models
-                )
-
-        return queryset
-
-    @staticmethod
-    def _validate_lookup_path(model: Type[models.Model], lookup_path: str) -> bool:
-        """Validate that a Django lookup path (e.g., 'first_app__name') exists.
-
-        Args:
-            model: The Django model class.
-            lookup_path: The lookup path to validate (e.g., 'first_app__name').
-
-        Returns:
-            True if lookup path is valid, False otherwise.
-        """
-        parts = lookup_path.split('__')
-        current_model = model
-
-        for part in parts[:-1]:
-            try:
-                field = current_model._meta.get_field(part)
-                if isinstance(field, (models.ForeignKey, models.OneToOneField)):
-                    current_model = field.related_model
-                elif isinstance(field, models.ManyToManyField):
-                    current_model = field.related_model
-                else:
-                    return False
-            except FieldDoesNotExist:
-                return False
-
-        # Check if the final field exists
-        try:
-            current_model._meta.get_field(parts[-1])
-            return True
-        except FieldDoesNotExist:
-            return False
-
-    @staticmethod
-    def _get_lookup_target_field(model: Type[models.Model], lookup_path: str) -> Optional[models.Field]:
-        """Get the target field from a Django lookup path.
-
-        Args:
-            model: The Django model class.
-            lookup_path: The lookup path (e.g., 'first_app__name').
-
-        Returns:
-            The target field if found, None otherwise.
-        """
-        parts = lookup_path.split('__')
-        current_model = model
-
-        for part in parts[:-1]:
-            try:
-                field = current_model._meta.get_field(part)
-                if isinstance(field, (models.ForeignKey, models.OneToOneField)):
-                    current_model = field.related_model
-                elif isinstance(field, models.ManyToManyField):
-                    current_model = field.related_model
-                else:
-                    return None
-            except FieldDoesNotExist:
-                return None
-
-        # Get the final field
-        try:
-            return current_model._meta.get_field(parts[-1])
-        except FieldDoesNotExist:
             return None
 
     @staticmethod
@@ -418,16 +225,8 @@ class CRUDUtils:
         param_name: str,
         param_value: str,
     ) -> models.QuerySet:
-        """Apply wildcard filtering to text fields.
+        """Apply wildcard filtering to text fields."""
 
-        Args:
-            queryset: The queryset to filter.
-            param_name: The parameter name (field or lookup path).
-            param_value: The parameter value (may contain wildcards).
-
-        Returns:
-            Filtered queryset.
-        """
         # Handle wildcard patterns
         if '*' not in param_value:
             # No wildcard - use exact match (case-insensitive)
@@ -458,65 +257,15 @@ class CRUDUtils:
 
     @staticmethod
     def _has_middle_wildcard(value: str) -> bool:
-        """Check if wildcard appears in the middle of the string.
+        """Check if wildcard appears in the middle of the string."""
 
-        Args:
-            value: String to check.
-
-        Returns:
-            True if * appears in middle (not at start/end).
-        """
         return len(value) > 2 and '*' in value[1:-1]
 
     @staticmethod
     def _wildcard_to_regex(pattern: str) -> str:
-        """Convert wildcard pattern to regex pattern.
+        """Convert wildcard pattern to regex pattern."""
 
-        Args:
-            pattern: Wildcard pattern (e.g., "t*t", "*test*").
-
-        Returns:
-            Regex pattern string.
-        """
         return re.escape(pattern).replace(r'\*', '.*')
-
-    @staticmethod
-    def _apply_filtering(
-        queryset: models.QuerySet,
-        request: Request,
-        filter_backend: Optional[Any] = None,
-        filterset_class: Optional[Type] = None,
-    ) -> models.QuerySet:
-        """Apply filtering to queryset using django-filter or generic wildcard filtering.
-
-        Args:
-            queryset: The queryset to filter.
-            request: The HTTP request object.
-            filter_backend: Optional filter backend (defaults to DjangoFilterBackend).
-            filterset_class: Optional FilterSet class for django-filter.
-
-        Returns:
-            Filtered queryset (empty if filters don't match).
-        """
-        # If FilterSet is provided, use django-filter
-        if filterset_class:
-            if filter_backend is None:
-                filter_backend = DjangoFilterBackend()
-
-            # Create a mock view object with filterset_class for django-filter
-            fs_class = filterset_class  # Capture for closure
-
-            class MockView:
-                filterset_class = fs_class
-
-            return filter_backend.filter_queryset(request, queryset, view=MockView())
-
-        # Otherwise, use generic wildcard filtering
-        # Apply wildcard filtering if there are query params
-        # This ensures empty results when filters don't match, not all items
-        if request.query_params:
-            return CRUDUtils._apply_wildcard_filtering(queryset, request)
-        return queryset
 
     @staticmethod
     def _apply_ordering(
@@ -525,17 +274,8 @@ class CRUDUtils:
         ordering_fields: Optional[list[str]] = None,
         default_ordering: Optional[list[str]] = None,
     ) -> models.QuerySet:
-        """Apply ordering to queryset.
+        """Apply ordering to queryset."""
 
-        Args:
-            queryset: The queryset to order.
-            request: The HTTP request object.
-            ordering_fields: List of allowed ordering fields.
-            default_ordering: Default ordering if none specified (prevents pagination warnings).
-
-        Returns:
-            Ordered queryset.
-        """
         ordering_param = request.query_params.get('ordering')
 
         if ordering_param:
@@ -564,14 +304,212 @@ class CRUDUtils:
         return queryset.order_by('pk')
 
     @staticmethod
+    def _get_lookup_target_field(model: Type[models.Model], lookup_path: str) -> Optional[models.Field]:
+        """Get the target field from a Django lookup path."""
+
+        parts = lookup_path.split('__')
+        current_model = model
+
+        for part in parts[:-1]:
+            try:
+                field = current_model._meta.get_field(part)
+                if isinstance(field, (models.ForeignKey, models.OneToOneField)):
+                    current_model = field.related_model
+                elif isinstance(field, models.ManyToManyField):
+                    current_model = field.related_model
+                else:
+                    return None
+            except FieldDoesNotExist:
+                return None
+
+        # Get the final field
+        try:
+            return current_model._meta.get_field(parts[-1])
+        except FieldDoesNotExist:
+            return None
+
+    @staticmethod
+    def _validate_lookup_path(model: Type[models.Model], lookup_path: str) -> bool:
+        """Validate that a Django lookup path (e.g., 'first_app__name') exists."""
+
+        parts = lookup_path.split('__')
+        current_model = model
+
+        for part in parts[:-1]:
+            try:
+                field = current_model._meta.get_field(part)
+                if isinstance(field, (models.ForeignKey, models.OneToOneField)):
+                    current_model = field.related_model
+                elif isinstance(field, models.ManyToManyField):
+                    current_model = field.related_model
+                else:
+                    return False
+            except FieldDoesNotExist:
+                return False
+
+        # Check if the final field exists
+        try:
+            current_model._meta.get_field(parts[-1])
+            return True
+        except FieldDoesNotExist:
+            return False
+
+    @staticmethod
+    def _apply_wildcard_filtering(
+        queryset: models.QuerySet,
+        request: Request,
+    ) -> models.QuerySet:
+        """Apply generic wildcard filtering directly to queryset.
+
+        Supports filtering for different field types:
+
+        Text fields (wildcard patterns):
+        - name=test*  -> name__istartswith=test (starts with)
+        - name=*test  -> name__iendswith=test (ends with)
+        - name=*test* -> name__icontains=test (contains)
+        - name=t*t    -> name__iregex (regex pattern matching, e.g., matches "test", "tart")
+        - name=test   -> name__iexact=test (exact match, default)
+
+        Number fields (comparison operators and ranges):
+        - age=25      -> exact match
+        - age=>=25    -> greater than or equal
+        - age=<=100   -> less than or equal
+        - age=>25     -> greater than
+        - age=<25     -> less than
+        - age=10-20   -> range (inclusive)
+
+        ForeignKey lookups:
+        - first_app__name=t* -> Filter by related ForeignKey field
+        - first_app__age=>=18 -> Filter by related number field
+
+        Works generically for any field on any model, including ForeignKey lookups.
+
+        Args:
+            queryset: The queryset to filter.
+            request: The HTTP request object.
+
+        Returns:
+            Filtered queryset.
+
+        Raises:
+            ValidationError: If a filter field doesn't exist on the model.
+        """
+        from django.db import models as django_models
+
+        query_params = request.query_params.copy()
+        model = queryset.model
+        model_fields = {f.name for f in model._meta.get_fields()}
+
+        # Reserved query parameters that shouldn't be treated as field filters
+        reserved_params = {'page', 'page_size', 'ordering', 'format'}
+
+        # Track if we have any non-reserved, non-empty query params
+        has_filter_params = False
+        filtered_queryset = queryset
+
+        for param_name, param_value in query_params.items():
+            # Skip reserved params and empty values
+            if param_name in reserved_params or not param_value:
+                continue
+
+            # We have a filter parameter
+            has_filter_params = True
+
+            # Check if this is a ForeignKey lookup (contains __)
+            is_related_lookup = '__' in param_name
+
+            if is_related_lookup:
+                # Validate ForeignKey lookup path exists
+                if not CRUDUtils._validate_lookup_path(model, param_name):
+                    # Invalid lookup path - raise exception
+                    raise ValidationError(
+                        {param_name: f"Invalid lookup path: '{param_name}' does not exist on {model.__name__}"}
+                    )
+
+                # For related lookups, determine the target field type
+                target_field = CRUDUtils._get_lookup_target_field(model, param_name)
+                if target_field is None:
+                    # Field doesn't exist - raise exception
+                    raise ValidationError(
+                        {param_name: f"Field '{param_name}' does not exist on {model.__name__}"}
+                    )
+
+                # Apply wildcard filtering to related field
+                filtered_queryset = CRUDUtils._apply_wildcard_to_field(
+                    filtered_queryset, param_name, param_value, target_field, django_models
+                )
+            else:
+                # Direct field lookup
+                if param_name not in model_fields:
+                    # Field doesn't exist - raise exception
+                    raise ValidationError(
+                        {param_name: f"Field '{param_name}' does not exist on {model.__name__}"}
+                    )
+
+                # Get field type to determine appropriate lookup
+                try:
+                    field = model._meta.get_field(param_name)
+                except FieldDoesNotExist:
+                    # Field doesn't exist - raise exception
+                    raise ValidationError(
+                        {param_name: f"Field '{param_name}' does not exist on {model.__name__}"}
+                    )
+
+                # Apply wildcard filtering to direct field
+                filtered_queryset = CRUDUtils._apply_wildcard_to_field(
+                    filtered_queryset, param_name, param_value, field, django_models
+                )
+
+        # If we had filter params but no valid filters were applied, return empty
+        # This handles the case where all params were reserved or empty
+        if has_filter_params:
+            return filtered_queryset
+
+        # No filter params at all - return original queryset
+        return queryset
+
+    @staticmethod
+    def _apply_filtering(
+        queryset: models.QuerySet,
+        request: Request,
+    ) -> models.QuerySet:
+        """Apply filtering to queryset using django-filter or generic wildcard filtering."""
+
+        # Use generic wildcard filtering
+        # Apply wildcard filtering if there are query params
+        # This ensures empty results when filters don't match, not all items
+        if request.query_params:
+            return CRUDUtils._apply_wildcard_filtering(queryset, request)
+        return queryset
+
+    @staticmethod
+    def _build_queryset(
+        model_class: Type[models.Model],
+        queryset_hook: Optional[Callable] = None,
+        select_related: Optional[list[str]] = None,
+        prefetch_related: Optional[list[str]] = None,
+    ) -> models.QuerySet:  # constant filter: queryset_hook=lambda: FirstApp.objects.filter(is_active=True)
+        """Build and optimize a queryset."""
+
+        if queryset_hook:
+            queryset = queryset_hook()
+        else:
+            queryset = model_class.objects.all()
+
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+        if prefetch_related:
+            queryset = queryset.prefetch_related(*prefetch_related)
+
+        return queryset
+
+    @staticmethod
     def get(
         request: Request,
         model_class: Type[models.Model],
         serializer_class: Type[ModelSerializer],
         pagination_class: Optional[Type[PageNumberPagination]] = None,
         queryset_hook: Optional[Callable] = None,
-        filter_backend: Optional[Any] = None,
-        filterset_class: Optional[Type] = None,
         ordering_fields: Optional[list[str]] = None,
         default_ordering: Optional[list[str]] = None,
         select_related: Optional[list[str]] = None,
@@ -592,8 +530,6 @@ class CRUDUtils:
             serializer_class: The DRF serializer class for serialization.
             pagination_class: Optional pagination class (defaults to StandardResultsSetPagination).
             queryset_hook: Optional function to customize base queryset.
-            filter_backend: Optional filter backend for filtering.
-            filterset_class: Optional FilterSet class for django-filter.
             ordering_fields: List of allowed ordering fields.
             default_ordering: Default ordering if none specified (e.g., ['-created_at']).
             select_related: List of ForeignKey/OneToOne fields to optimize.
@@ -625,27 +561,28 @@ class CRUDUtils:
             )
 
             # Apply filtering
-            queryset = CRUDUtils._apply_filtering(
-                queryset, request, filter_backend, filterset_class
-            )
+            queryset = CRUDUtils._apply_filtering(queryset=queryset, request=request)
 
             # Apply ordering (ensures consistent pagination - MUST be before pagination)
+            print()
             queryset = CRUDUtils._apply_ordering(
-                queryset, request, ordering_fields, default_ordering
+                queryset=queryset, request=request, ordering_fields=ordering_fields, default_ordering=default_ordering
             )
 
             # Apply pagination
+            print()
             if pagination_class is None:
                 pagination_class = StandardResultsSetPagination
 
             paginator = pagination_class()
-            page = paginator.paginate_queryset(queryset, request)
+            page = paginator.paginate_queryset(queryset=queryset, request=request)
 
             if page is not None:
                 serializer = serializer_class(page, context={'request': request}, many=True)
                 return paginator.get_paginated_response(serializer.data)
 
             # No pagination, return all results
+            print()
             serializer = serializer_class(queryset, context={'request': request}, many=True)
             return Response(serializer.data)
 
@@ -655,16 +592,8 @@ class CRUDUtils:
         serializer_class: Type[ModelSerializer],
         **kwargs: Any,
     ) -> Response:
-        """Create a new instance.
+        """Create a new instance."""
 
-        Args:
-            request: The HTTP request object containing the data to create.
-            serializer_class: The DRF serializer class for validation and creation.
-            **kwargs: Additional keyword arguments for serializer.save().
-
-        Returns:
-            Response: HTTP 201 with created instance data, or HTTP 400 with validation errors.
-        """
         serializer = serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
             try:
@@ -684,45 +613,6 @@ class CRUDUtils:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
-    def bulk_create(
-        request: Request,
-        serializer_class: Type[ModelSerializer],
-        **kwargs: Any,
-    ) -> Response:
-        """Create multiple instances in a single request.
-
-        Args:
-            request: The HTTP request object containing list of data to create.
-            serializer_class: The DRF serializer class for validation and creation.
-            **kwargs: Additional keyword arguments for serializer.save().
-
-        Returns:
-            Response: HTTP 201 with list of created instances, or HTTP 400 with validation errors.
-        """
-        if not isinstance(request.data, list):
-            return Response(
-                {'error': 'Expected a list of objects'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        serializer = serializer_class(data=request.data, context={'request': request}, many=True)
-        if serializer.is_valid():
-            try:
-                serializer.save(**kwargs)
-                model_name = serializer_class.Meta.model.__name__
-                logger.info(f"Bulk created {len(serializer.data)} {model_name} instances")
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            except (IntegrityError, DjangoValidationError) as e:
-                logger.error(f"Database error bulk creating {serializer_class.Meta.model.__name__}: {str(e)}")
-                return Response(
-                    {'error': 'Database constraint violation', 'detail': str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        model_name = serializer_class.Meta.model.__name__
-        logger.warning(f"Validation failed for bulk create {model_name}: {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @staticmethod
     def _update_instance(
         request: Request,
         model_class: Type[models.Model],
@@ -733,21 +623,8 @@ class CRUDUtils:
         prefetch_related: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Response:
-        """Internal method to update an instance.
+        """Internal method to update an instance."""
 
-        Args:
-            request: The HTTP request object.
-            model_class: The Django model class to query.
-            serializer_class: The DRF serializer class for validation and update.
-            pk: Primary key of the instance to update.
-            partial: Whether to allow partial updates.
-            select_related: List of ForeignKey/OneToOne fields to optimize.
-            prefetch_related: List of ManyToMany/ReverseForeignKey fields to optimize.
-            **kwargs: Additional keyword arguments for serializer.save().
-
-        Returns:
-            Response: HTTP 200 with updated data, HTTP 404 if not found, or HTTP 400 with errors.
-        """
         instance = CRUDUtils._get_instance_by_pk(
             model_class=model_class,
             pk=pk,
@@ -787,19 +664,8 @@ class CRUDUtils:
         prefetch_related: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Response:
-        """Update an existing instance with full replacement (PUT semantics).
+        """Update an existing instance with full replacement (PUT semantics)."""
 
-        Args:
-            request: The HTTP request object containing the complete replacement data.
-            model_class: The Django model class to query.
-            serializer_class: The DRF serializer class for validation and update.
-            select_related: List of ForeignKey/OneToOne fields to optimize.
-            prefetch_related: List of ManyToMany/ReverseForeignKey fields to optimize.
-            **kwargs: Additional keyword arguments, must include 'pk' for instance identification.
-
-        Returns:
-            Response: HTTP 200 with updated instance data, HTTP 404 if not found, or HTTP 400 with validation errors.
-        """
         if not (pk := kwargs.pop('pk', None)):
             logger.warning(f"PUT request missing pk for {model_class.__name__}")
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -823,19 +689,8 @@ class CRUDUtils:
         prefetch_related: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Response:
-        """Partially update an existing instance (PATCH semantics).
+        """Partially update an existing instance (PATCH semantics)."""
 
-        Args:
-            request: The HTTP request object containing partial update data.
-            model_class: The Django model class to query.
-            serializer_class: The DRF serializer class for validation and update.
-            select_related: List of ForeignKey/OneToOne fields to optimize.
-            prefetch_related: List of ManyToMany/ReverseForeignKey fields to optimize.
-            **kwargs: Additional keyword arguments, must include 'pk' for instance identification.
-
-        Returns:
-            Response: HTTP 200 with updated instance data, HTTP 404 if not found, or HTTP 400 with validation errors.
-        """
         if not (pk := kwargs.pop('pk', None)):
             logger.warning(f"PATCH request missing pk for {model_class.__name__}")
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -851,85 +706,13 @@ class CRUDUtils:
         )
 
     @staticmethod
-    def bulk_update(
-        request: Request,
-        model_class: Type[models.Model],
-        serializer_class: Type[ModelSerializer],
-        **kwargs: Any,
-    ) -> Response:
-        """Update multiple instances in a single request.
-
-        Expected format: [{"id": 1, "field": "value"}, {"id": 2, "field": "value"}]
-
-        Args:
-            request: The HTTP request object containing list of updates.
-            model_class: The Django model class to query.
-            serializer_class: The DRF serializer class for validation and update.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Response: HTTP 200 with list of updated instances, or HTTP 400 with validation errors.
-        """
-        if not isinstance(request.data, list):
-            return Response(
-                {'error': 'Expected a list of objects with id field'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        updated_instances = []
-        errors = []
-
-        for item in request.data:
-            if 'id' not in item:
-                errors.append({'error': 'Missing id field', 'data': item})
-                continue
-
-            instance = CRUDUtils._get_instance_by_pk(model_class, item['id'])
-            if not instance:
-                errors.append({'error': f"Instance with id={item['id']} not found", 'data': item})
-                continue
-
-            serializer = serializer_class(
-                instance,
-                data=item,
-                context={'request': request},
-                partial=True
-            )
-            if serializer.is_valid():
-                try:
-                    serializer.save()
-                    updated_instances.append(serializer.data)
-                except (IntegrityError, DjangoValidationError) as e:
-                    errors.append({'error': str(e), 'id': item['id']})
-            else:
-                errors.append({'error': serializer.errors, 'id': item['id']})
-
-        if errors:
-            logger.warning(f"Bulk update had {len(errors)} errors for {model_class.__name__}")
-            return Response(
-                {'updated': updated_instances, 'errors': errors},
-                status=status.HTTP_207_MULTI_STATUS
-            )
-
-        logger.info(f"Bulk updated {len(updated_instances)} {model_class.__name__} instances")
-        return Response(updated_instances, status=status.HTTP_200_OK)
-
-    @staticmethod
     def delete(
         request: Request,
         model_class: Type[models.Model],
         **kwargs: Any,
     ) -> Response:
-        """Delete an existing instance.
+        """Delete an existing instance."""
 
-        Args:
-            request: The HTTP request object.
-            model_class: The Django model class to query.
-            **kwargs: Additional keyword arguments, must include 'pk' for instance identification.
-
-        Returns:
-            Response: HTTP 204 on successful deletion, HTTP 404 if instance not found.
-        """
         if not (pk := kwargs.get('pk')):
             logger.warning(f"DELETE request missing pk for {model_class.__name__}")
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -948,56 +731,3 @@ class CRUDUtils:
                 {'error': 'Failed to delete instance', 'detail': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-    @staticmethod
-    def bulk_delete(
-        request: Request,
-        model_class: Type[models.Model],
-        **kwargs: Any,
-    ) -> Response:
-        """Delete multiple instances in a single request.
-
-        Expected format: {"ids": [1, 2, 3]} or {"ids": "1,2,3"}
-
-        Args:
-            request: The HTTP request object containing list of IDs to delete.
-            model_class: The Django model class to query.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Response: HTTP 200 with deletion results, or HTTP 400 with errors.
-        """
-        ids = request.data.get('ids', [])
-        if isinstance(ids, str):
-            ids = [int(id.strip()) for id in ids.split(',')]
-
-        if not ids:
-            return Response(
-                {'error': 'No IDs provided'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        deleted_count = 0
-        not_found = []
-
-        for pk in ids:
-            instance = CRUDUtils._get_instance_by_pk(model_class, pk)
-            if instance:
-                try:
-                    instance.delete()
-                    deleted_count += 1
-                except Exception as e:
-                    logger.error(f"Error deleting {model_class.__name__} pk={pk}: {str(e)}")
-                    not_found.append({'id': pk, 'error': str(e)})
-            else:
-                not_found.append({'id': pk, 'error': 'Not found'})
-
-        logger.info(f"Bulk deleted {deleted_count} {model_class.__name__} instances")
-        return Response(
-            {
-                'deleted_count': deleted_count,
-                'not_found': not_found,
-                'total_requested': len(ids)
-            },
-            status=status.HTTP_200_OK
-        )
