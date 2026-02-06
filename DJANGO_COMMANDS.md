@@ -3,15 +3,15 @@ This document provides a list of common Django management commands that can be u
 
 ## Common Django Commands
 
-### Database and Migrations
-- `python manage.py makemigrations`: Creates new migrations based on the changes detected in models.
-- `python manage.py migrate`: Applies the migrations to the database.
-- `python manage.py createsuperuser`: Creates a new superuser for the admin interface.
-
 ### App Management
 - `python manage.py startproject <project_name>`: Creates a new Django project with the specified name.
 - `python manage.py startapp <app_name>`: Creates a new Django app with the specified name.
 - `python manage.py runserver`: Starts the development server.
+
+### Database and Migrations
+- `python manage.py makemigrations`: Creates new migrations based on the changes detected in models.
+- `python manage.py migrate`: Applies the migrations to the database.
+- `python manage.py createsuperuser`: Creates a new superuser for the admin interface.
 
 ### Data Management
 - `python manage.py flush`: Resets the database by removing all data and reapplying migrations.
