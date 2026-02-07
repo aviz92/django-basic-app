@@ -29,7 +29,7 @@ ignore = [
 [lint.per-file-ignores]
 "_init_.py" = ["F401"]
 "tests/*/.py" = ["ANN", "S101", "PLR2004", "N818"]
-"tests/*" = ["F401", "F811"]
+"tests/*" = ["F401", "F811", "E402"]
 
 [lint.isort]
 combine-as-imports = true

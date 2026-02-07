@@ -32,7 +32,13 @@ User = get_user_model()
 factory = APIRequestFactory()
 
 
-def _make_authenticated_request(method="GET", path="/", data=None, query_params=None, token=None):
+def _make_authenticated_request(
+    method: str = "GET",
+    path: str = "/",
+    data: dict | None = None,
+    query_params: dict | None = None,
+    token: Token | None = None,
+) -> DRFRequest:
     """Helper to create authenticated DRF request."""
 
     if method == "GET":
@@ -63,7 +69,7 @@ def _make_authenticated_request(method="GET", path="/", data=None, query_params=
 class TestCRUDUtilsGet(TestCase):
     """Test CRUDUtils.get() method."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.user = User.objects.create_user(username="testuser", password="testpass123")
 
@@ -77,7 +83,7 @@ class TestCRUDUtilsGet(TestCase):
             FirstApp.objects.create(name="other", description="Other description"),
         ]
 
-    def test_get_single_instance(self):
+    def test_get_single_instance(self) -> None:
         """Test retrieving a single instance by PK."""
         request = _make_authenticated_request("GET", f"/first_app/{self.first_app_instances[0].pk}/", token=self.token)
         response = CRUDUtils.get(
@@ -91,7 +97,7 @@ class TestCRUDUtilsGet(TestCase):
         self.assertEqual(response.data["id"], self.first_app_instances[0].pk)
         self.assertEqual(response.data["name"], "test1")
 
-    def test_get_single_instance_not_found(self):
+    def test_get_single_instance_not_found(self) -> None:
         """Test retrieving non-existent instance returns 404."""
         request = _make_authenticated_request("GET", "/first_app/999/", token=self.token)
         response = CRUDUtils.get(
@@ -103,7 +109,7 @@ class TestCRUDUtilsGet(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_get_list_without_filters(self):
+    def test_get_list_without_filters(self) -> None:
         """Test retrieving list without filters."""
         request = _make_authenticated_request("GET", "/first_app/", token=self.token)
         response = CRUDUtils.get(
@@ -116,7 +122,7 @@ class TestCRUDUtilsGet(TestCase):
         self.assertIn("results", response.data)
         self.assertEqual(response.data["count"], 4)
 
-    def test_get_list_with_text_wildcard_starts_with(self):
+    def test_get_list_with_text_wildcard_starts_with(self) -> None:
         """Test filtering with wildcard pattern: starts with."""
         request = _make_authenticated_request("GET", "/first_app/", query_params={"name": "test*"}, token=self.token)
         response = CRUDUtils.get(
@@ -130,7 +136,7 @@ class TestCRUDUtilsGet(TestCase):
         self.assertEqual(len(results), 2)
         self.assertTrue(all("test" in item["name"].lower() for item in results))
 
-    def test_get_list_with_text_wildcard_contains(self):
+    def test_get_list_with_text_wildcard_contains(self) -> None:
         """Test filtering with wildcard pattern: contains."""
         request = _make_authenticated_request("GET", "/first_app/", query_params={"name": "*test*"}, token=self.token)
         response = CRUDUtils.get(
@@ -144,7 +150,7 @@ class TestCRUDUtilsGet(TestCase):
         self.assertEqual(len(results), 2)
         self.assertTrue(all("test" in item["name"].lower() for item in results))
 
-    def test_validation_error_nonexistent_field(self):
+    def test_validation_error_nonexistent_field(self) -> None:
         """Test filtering with non-existent field returns empty results."""
         with pytest.raises(ValidationError):
             request = _make_authenticated_request(
@@ -156,7 +162,7 @@ class TestCRUDUtilsGet(TestCase):
                 serializer_class=FirstAppSerializer,
             )
 
-    def test_get_list_with_foreignkey_lookup(self):
+    def test_get_list_with_foreignkey_lookup(self) -> None:
         """Test filtering with ForeignKey lookup."""
         # Create SecondApp instances
         request = _make_authenticated_request(
@@ -177,12 +183,12 @@ class TestCRUDUtilsGet(TestCase):
 class TestCRUDUtilsPost(TestCase):
     """Test CRUDUtils.post() method."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.token = Token.objects.create(user=self.user)
 
-    def test_post_create_instance(self):
+    def test_post_create_instance(self) -> None:
         """Test creating a new instance."""
         request = _make_authenticated_request(
             "POST", "/first_app/", data={"name": "New Item", "description": "New Description"}, token=self.token
@@ -196,7 +202,7 @@ class TestCRUDUtilsPost(TestCase):
         self.assertEqual(response.data["name"], "New Item")
         self.assertTrue(FirstApp.objects.filter(name="New Item").exists())
 
-    def test_post_validation_error(self):
+    def test_post_validation_error(self) -> None:
         """Test creating instance with validation error."""
         request = _make_authenticated_request(
             "POST", "/first_app/", data={"description": "Missing name"}, token=self.token
@@ -213,14 +219,14 @@ class TestCRUDUtilsPost(TestCase):
 class TestCRUDUtilsHelperMethods(TestCase):
     """Test helper methods."""
 
-    def test_has_middle_wildcard(self):
+    def test_has_middle_wildcard(self) -> None:
         """Test detecting middle wildcard."""
         self.assertTrue(FilterUtils._has_middle_wildcard("t*t"))  # pylint: disable=W0212
         self.assertFalse(FilterUtils._has_middle_wildcard("test*"))  # pylint: disable=W0212
         self.assertFalse(FilterUtils._has_middle_wildcard("*test"))  # pylint: disable=W0212
         self.assertFalse(FilterUtils._has_middle_wildcard("*test*"))  # pylint: disable=W0212
 
-    def test_wildcard_to_regex(self):
+    def test_wildcard_to_regex(self) -> None:
         """Test wildcard to regex conversion."""
         regex = FilterUtils._wildcard_to_regex("t*t")  # pylint: disable=W0212
         self.assertIn(".*", regex)
