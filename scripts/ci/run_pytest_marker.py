@@ -1,5 +1,3 @@
-import argparse
-
 from custom_python_logger import build_logger
 from python_github_plus import GitHubClient
 

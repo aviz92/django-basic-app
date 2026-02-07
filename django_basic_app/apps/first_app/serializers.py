@@ -8,6 +8,6 @@ class FirstAppSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FirstApp
-        fields = '__all__'
+        fields = "__all__"
 
         depth = 10

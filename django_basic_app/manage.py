@@ -12,7 +12,7 @@ load_dotenv()
 logger = build_logger("DjangoManage")
 
 
-def main():
+def main() -> None:
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
     try:

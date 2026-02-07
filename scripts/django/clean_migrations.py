@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
 
-
-IGNORED_DIRS = ['.venv']
-IGNORED_FILES = ['__init__.py']
+IGNORED_DIRS = [".venv"]
+IGNORED_FILES = ["__init__.py"]
 
 
 def clean_migrations_folder(root_dir: Path) -> None:
@@ -11,8 +10,8 @@ def clean_migrations_folder(root_dir: Path) -> None:
         if any(ignored_dir in dirpath for ignored_dir in IGNORED_DIRS):
             continue
 
-        if 'migrations' in dirnames:
-            migrations_dir = os.path.join(dirpath, 'migrations')
+        if "migrations" in dirnames:
+            migrations_dir = os.path.join(dirpath, "migrations")
             print(f"cleaning: {migrations_dir}")
 
             for filename in os.listdir(migrations_dir):

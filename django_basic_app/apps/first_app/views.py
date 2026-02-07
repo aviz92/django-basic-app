@@ -28,19 +28,11 @@ class FirstAppListView(generics.ListCreateAPIView):
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Retrieve a list of all FirstApp instances."""
-        return CRUDUtils.get(
-            request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
-            **kwargs
-        )
+        return CRUDUtils.get(request=request, model_class=FirstApp, serializer_class=FirstAppSerializer, **kwargs)
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Create a new FirstApp instance."""
-        return CRUDUtils.post(
-            request=request,
-            serializer_class=FirstAppSerializer
-        )
+        return CRUDUtils.post(request=request, serializer_class=FirstAppSerializer)
 
 
 class FirstAppDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -60,35 +52,16 @@ class FirstAppDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Retrieve a specific FirstApp instance by primary key."""
-        return CRUDUtils.get(
-            request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
-            **kwargs
-        )
+        return CRUDUtils.get(request=request, model_class=FirstApp, serializer_class=FirstAppSerializer, **kwargs)
 
     def put(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Fully update a FirstApp instance by primary key."""
-        return CRUDUtils.put(
-            request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
-            **kwargs
-        )
+        return CRUDUtils.put(request=request, model_class=FirstApp, serializer_class=FirstAppSerializer, **kwargs)
 
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Partially update a FirstApp instance by primary key."""
-        return CRUDUtils.patch(
-            request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
-            **kwargs
-        )
+        return CRUDUtils.patch(request=request, model_class=FirstApp, serializer_class=FirstAppSerializer, **kwargs)
 
     def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Delete a FirstApp instance by primary key."""
-        return CRUDUtils.delete(
-            request=request,
-            model_class=FirstApp,
-            **kwargs
-        )
+        return CRUDUtils.delete(request=request, model_class=FirstApp, **kwargs)

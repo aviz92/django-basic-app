@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-IGNORED_DIRS = ['.venv']
+IGNORED_DIRS = [".venv"]
 
 
 def delete_pycache_folder(root_dir: Path) -> None:
@@ -10,8 +10,8 @@ def delete_pycache_folder(root_dir: Path) -> None:
         if any(ignored_dir in dirpath for ignored_dir in IGNORED_DIRS):
             continue
 
-        if '__pycache__' in dirnames:
-            pycache_dir = os.path.join(dirpath, '__pycache__')
+        if "__pycache__" in dirnames:
+            pycache_dir = os.path.join(dirpath, "__pycache__")
             print(f"cleaning: {pycache_dir}")
             try:
                 shutil.rmtree(pycache_dir)
