@@ -15,6 +15,7 @@ uv run python manage.py test apps.first_app.tests.TestFirstAppAPI.test_list_all_
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from .models import FirstApp
@@ -42,7 +43,6 @@ class TestFirstAppAPI(TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         self.user = User.objects.create_user(username="testuser", password="testpass123")
-        from rest_framework.authtoken.models import Token
 
         self.token = Token.objects.create(user=self.user)
         self.api_client = APIClient()

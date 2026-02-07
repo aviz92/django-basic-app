@@ -27,6 +27,7 @@ disable =
     C2701,      # import-private-name ; Imported private module
     R6301,      # Method could be a function (no-self-use)
     C0321,      # More than one statement on a single line (multiple-statements)
+    C0413,      # Import "from apps.first_app.models import FirstApp" should be placed at the top of the module (wrong-import-position)
 
     # tests/ only
     W0613,      # unused-argument

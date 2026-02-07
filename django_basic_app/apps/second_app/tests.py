@@ -16,6 +16,7 @@ from apps.first_app.models import FirstApp
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from .models import SecondApp
@@ -46,7 +47,6 @@ class TestSecondAppAPI(TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         self.user = User.objects.create_user(username="testuser", password="testpass123")
-        from rest_framework.authtoken.models import Token
 
         self.token = Token.objects.create(user=self.user)
         self.api_client = APIClient()
