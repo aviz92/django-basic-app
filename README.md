@@ -1,10 +1,15 @@
+![PyPI version](https://img.shields.io/pypi/v/django-basic-app)
+![Python](https://img.shields.io/badge/python->=3.12-blue)
+![Development Status](https://img.shields.io/badge/status-stable-green)
+![Maintenance](https://img.shields.io/maintenance/yes/2026)
+![PyPI](https://img.shields.io/pypi/dm/django-basic-app)
+![License](https://img.shields.io/pypi/l/django-basic-app)
+
+---
+
 # Django Basic App
 
 A production-ready Django REST Framework template with enterprise-grade CRUD utilities, featuring advanced filtering, pagination, and bulk operations out of the box.
-
-[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
-[![Django Version](https://img.shields.io/badge/django-5.2%2B-green.svg)](https://www.djangoproject.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## 🚀 Features
 
