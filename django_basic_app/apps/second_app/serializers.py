@@ -6,7 +6,8 @@ from .models import SecondApp
 
 class SecondAppSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=255, required=True)
-    first_app = serializers.SlugRelatedField(
+    first_app_name = serializers.SlugRelatedField(
+        source="first_app",
         queryset=FirstApp.objects.all(),
         slug_field="name",
         required=False,
