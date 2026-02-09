@@ -15,14 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from core import views
 from django.contrib import admin
 from django.urls import include, path
 from schema_graph.views import Schema
 
-from core import views
-
 urlpatterns = [
-    path('', views.index, name='index'),  # This handles the root URL
+    path("", views.index, name="index"),  # This handles the root URL
     path("admin/", admin.site.urls),
     path("schema/", Schema.as_view()),  # http://127.0.0.1:8000/schema/
     # App paths
