@@ -1,7 +1,9 @@
 from django.db import models
 
+from apps.core.mixins import VersionedModel
 
-class FirstApp(models.Model):
+
+class FirstApp(VersionedModel):
     # Basic fields
     created_at = models.DateTimeField(verbose_name="Created at", auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name="Updated at", auto_now=True)
