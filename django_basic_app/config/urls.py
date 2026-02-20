@@ -1,5 +1,5 @@
 """
-URL configuration for core project.
+URL configuration for config project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/6.0/topics/http/urls/
@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from core import views
+from config import views
 from django.contrib import admin
 from django.urls import include, path
 from schema_graph.views import Schema

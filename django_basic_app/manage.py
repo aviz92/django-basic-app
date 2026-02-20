@@ -14,7 +14,7 @@ logger = build_logger("DjangoManage")
 
 def main() -> None:
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     try:
         from django.core.management import execute_from_command_line  # pylint: disable=C0415
     except ImportError as exc:

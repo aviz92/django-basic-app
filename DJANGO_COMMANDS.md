@@ -6,6 +6,7 @@ This document provides a list of common Django management commands that can be u
 ### App Management
 - `django-admin startproject <project_name>`: Creates a new Django project with the specified name.
 - `uv run python manage.py startapp <app_name>`: Creates a new Django app with the specified name.
+- `uv run python manage.py startapp <sub_folder>/<app_name>`: Creates a new Django app with the specified name under the specified sub-folder.
 - `uv run python manage.py runserver`: Starts the development server.
 
 ### Database and Migrations
