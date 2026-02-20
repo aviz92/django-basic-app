@@ -9,4 +9,4 @@ class FirstAppAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     readonly_fields = ("id", "created_at", "updated_at")
     save_on_top = True
-    fieldsets = (("Basic Info", {"fields": ("release", "name",)}),)
+    fieldsets = (("Basic Info", {"fields": ("release", "status", "name",)}),)

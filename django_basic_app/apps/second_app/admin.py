@@ -11,6 +11,6 @@ class SecondAppAdmin(admin.ModelAdmin):
     save_on_top = True
     fieldsets = (
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
-        ("Basic Info", {"fields": ("release", "name",)}),
+        ("Basic Info", {"fields": ("release", "status", "name",)}),
         ("Relations", {"fields": ("first_app",)}),
     )

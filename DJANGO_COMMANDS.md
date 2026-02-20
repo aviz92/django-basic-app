@@ -31,3 +31,5 @@ This document provides a list of common Django management commands that can be u
 - `uv run python manage.py create_release --release-version v1.1.1 --based-on v1.0.0`: Creates a new release based on the specified version.
 - `uv run python manage.py lock_release --release-version v1.1.0`: Locks the specified release version to prevent further modifications.
 - `uv run python manage.py unlock_release --release-version v1.1.0`: Unlocks the specified release version to allow modifications.
+- `uv run python manage.py approve_release --release-version v1.1.0`: Approves the specified release version, indicating that it has passed all necessary checks and is ready for deployment.
+- `uv run python manage.py approve_release --release-version v1.1.0 --only-future`: Approves the specified release version, but only if it is a future release (i.e., its version number is greater than the current version). This can be used to ensure that only upcoming releases are approved, while past releases remain unaffected.
