@@ -24,3 +24,10 @@ This document provides a list of common Django management commands that can be u
 - `uv run python manage.py dbshell`: Opens the database shell for the configured database.
 - `uv run python manage.py diffsettings`: Displays the differences between the current settings and Django's default settings.
 - `uv run python manage.py inspectdb`: Generates model code by introspecting the database tables.
+
+---
+
+### Custom Commands
+- `uv run python manage.py create_release --release-version v1.1.1 --based-on v1.0.0`: Creates a new release based on the specified version.
+- `uv run python manage.py lock_release --release-version v1.1.0`: Locks the specified release version to prevent further modifications.
+- `uv run python manage.py unlock_release --release-version v1.1.0`: Unlocks the specified release version to allow modifications.
