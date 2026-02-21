@@ -19,9 +19,9 @@ from django.core.exceptions import ValidationError
 
 
 class DataStatus(models.TextChoices):
-    DRAFT    = 'draft',    'Draft'
-    FUTURE   = 'future',   'Future'
-    APPROVED = 'approved', 'Approved'
+    DRAFT = ('draft', 'Draft')
+    FUTURE = ('future', 'Future')
+    APPROVED = ('approved', 'Approved')
 
 
 class VersionedModel(models.Model):
@@ -45,7 +45,7 @@ class VersionedModel(models.Model):
     )
     status = models.CharField(
         max_length=20,
-        choices=DataStatus.choices,
+        choices=DataStatus,
         default=DataStatus.DRAFT,
         db_index=True,
     )

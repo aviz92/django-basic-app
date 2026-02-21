@@ -10,5 +10,8 @@ class FirstApp(VersionedModel):
     name = models.CharField(verbose_name="Name", max_length=255, blank=False, unique=True)
     description = models.TextField(verbose_name="Description", null=True, blank=True)
 
+    class Meta:
+        unique_together = [('release', 'name')]
+
     def __str__(self) -> str:
         return self.name

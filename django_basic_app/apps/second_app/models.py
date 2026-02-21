@@ -12,5 +12,8 @@ class SecondApp(VersionedModel):
 
     first_app = models.ForeignKey(FirstApp, verbose_name="first_app", on_delete=models.CASCADE, null=True, blank=True)
 
+    class Meta:
+        unique_together = [('release', 'name')]
+
     def __str__(self) -> str:
         return self.name

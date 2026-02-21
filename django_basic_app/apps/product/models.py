@@ -14,8 +14,9 @@ class Category(VersionedModel):
 
 
 class Product(VersionedModel):
-    sku = models.CharField(max_length=50)
-    name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(verbose_name="Created at", auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name="Updated at", auto_now=True)
+    name = models.CharField(verbose_name="Name", max_length=255, blank=False, unique=True)
     description = models.TextField(blank=True)
     category = models.ForeignKey(
         Category,
@@ -25,8 +26,8 @@ class Product(VersionedModel):
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = [('release', 'sku')]
-        ordering = ['sku']
+        unique_together = [('release', 'name')]
+        # ordering = ['name']
 
     def __str__(self):
-        return f'{self.sku} - {self.name}'
+        return self.name
