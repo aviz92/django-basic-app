@@ -23,12 +23,24 @@ django_basic_app_path = project_root / "django_basic_app"
 if str(django_basic_app_path) not in sys.path:
     sys.path.insert(0, str(django_basic_app_path))
 
-from apps.first_app.models import FirstApp
-from apps.first_app.serializers import FirstAppSerializer
-from apps.second_app.models import SecondApp
-from apps.second_app.serializers import SecondAppSerializer
+from apps.department.models import Department
+from apps.department.serializers import DepartmentSerializer
+from apps.employee.models import Employee
+from apps.employee.serializers import EmployeeSerializer
+from django_versioned_models.models import Release
 
 User = get_user_model()
+
+
+def _release() -> Release:
+    """Create a test release (unlocked) for versioned models."""
+    release, _ = Release.objects.get_or_create(
+        version="test-release",
+        defaults={"description": "Test release", "is_locked": False},
+    )
+    return release
+
+
 factory = APIRequestFactory()
 
 
@@ -71,39 +83,40 @@ class TestCRUDUtilsGet(TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
+        self.release = _release()
         self.user = User.objects.create_user(username="testuser", password="testpass123")
 
         self.token = Token.objects.create(user=self.user)
 
         # Create test instances
-        self.first_app_instances = [
-            FirstApp.objects.create(name="test1", description="Description 1"),
-            FirstApp.objects.create(name="test2", description="Description 2"),
-            FirstApp.objects.create(name="product1", description="Product description"),
-            FirstApp.objects.create(name="other", description="Other description"),
+        self.employee_instances = [
+            Employee.objects.create(name="test1", description="Description 1", release=self.release),
+            Employee.objects.create(name="test2", description="Description 2", release=self.release),
+            Employee.objects.create(name="product1", description="Product description", release=self.release),
+            Employee.objects.create(name="other", description="Other description", release=self.release),
         ]
 
     def test_get_single_instance(self) -> None:
         """Test retrieving a single instance by PK."""
-        request = _make_authenticated_request("GET", f"/first_app/{self.first_app_instances[0].pk}/", token=self.token)
+        request = _make_authenticated_request("GET", f"/employee/{self.employee_instances[0].pk}/", token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
-            pk=self.first_app_instances[0].pk,
+            model_class=Employee,
+            serializer_class=EmployeeSerializer,
+            pk=self.employee_instances[0].pk,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], self.first_app_instances[0].pk)
+        self.assertEqual(response.data["id"], self.employee_instances[0].pk)
         self.assertEqual(response.data["name"], "test1")
 
     def test_get_single_instance_not_found(self) -> None:
         """Test retrieving non-existent instance returns 404."""
-        request = _make_authenticated_request("GET", "/first_app/999/", token=self.token)
+        request = _make_authenticated_request("GET", "/employee/999/", token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
+            model_class=Employee,
+            serializer_class=EmployeeSerializer,
             pk=999,
         )
 
@@ -111,11 +124,11 @@ class TestCRUDUtilsGet(TestCase):
 
     def test_get_list_without_filters(self) -> None:
         """Test retrieving list without filters."""
-        request = _make_authenticated_request("GET", "/first_app/", token=self.token)
+        request = _make_authenticated_request("GET", "/employee/", token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
+            model_class=Employee,
+            serializer_class=EmployeeSerializer,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -124,11 +137,11 @@ class TestCRUDUtilsGet(TestCase):
 
     def test_get_list_with_text_wildcard_starts_with(self) -> None:
         """Test filtering with wildcard pattern: starts with."""
-        request = _make_authenticated_request("GET", "/first_app/", query_params={"name": "test*"}, token=self.token)
+        request = _make_authenticated_request("GET", "/employee/", query_params={"name": "test*"}, token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
+            model_class=Employee,
+            serializer_class=EmployeeSerializer,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -138,11 +151,11 @@ class TestCRUDUtilsGet(TestCase):
 
     def test_get_list_with_text_wildcard_contains(self) -> None:
         """Test filtering with wildcard pattern: contains."""
-        request = _make_authenticated_request("GET", "/first_app/", query_params={"name": "*test*"}, token=self.token)
+        request = _make_authenticated_request("GET", "/employee/", query_params={"name": "*test*"}, token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=FirstApp,
-            serializer_class=FirstAppSerializer,
+            model_class=Employee,
+            serializer_class=EmployeeSerializer,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -154,30 +167,33 @@ class TestCRUDUtilsGet(TestCase):
         """Test filtering with non-existent field returns empty results."""
         with pytest.raises(ValidationError):
             request = _make_authenticated_request(
-                "GET", "/first_app/", query_params={"nonexistent": "value"}, token=self.token
+                "GET", "/employee/", query_params={"nonexistent": "value"}, token=self.token
             )
             _ = CRUDUtils.get(
                 request=request,
-                model_class=FirstApp,
-                serializer_class=FirstAppSerializer,
+                model_class=Employee,
+                serializer_class=EmployeeSerializer,
             )
 
     def test_get_list_with_foreignkey_lookup(self) -> None:
         """Test filtering with ForeignKey lookup."""
-        # Create SecondApp instances
+        emp = Employee.objects.get(name="test1")
+        Department.objects.create(name="dept1", employee=emp, release=self.release)
+        Department.objects.create(name="dept2", employee=self.employee_instances[1], release=self.release)
+
         request = _make_authenticated_request(
-            "GET", "/second_app/", query_params={"first_app__name": "test1"}, token=self.token
+            "GET", "/department/", query_params={"employee__name": "test1"}, token=self.token
         )
         response = CRUDUtils.get(
             request=request,
-            model_class=SecondApp,
-            serializer_class=SecondAppSerializer,
+            model_class=Department,
+            serializer_class=DepartmentSerializer,
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0]["name"], "second1")
+        self.assertEqual(results[0]["name"], "dept1")
 
 
 class TestCRUDUtilsPost(TestCase):
@@ -185,31 +201,39 @@ class TestCRUDUtilsPost(TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
+        self.release = _release()
         self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.token = Token.objects.create(user=self.user)
 
     def test_post_create_instance(self) -> None:
         """Test creating a new instance."""
         request = _make_authenticated_request(
-            "POST", "/first_app/", data={"name": "New Item", "description": "New Description"}, token=self.token
+            "POST",
+            "/employee/",
+            data={
+                "name": "New Item",
+                "description": "New Description",
+                "release": self.release.pk,
+            },
+            token=self.token,
         )
         response = CRUDUtils.post(
             request=request,
-            serializer_class=FirstAppSerializer,
+            serializer_class=EmployeeSerializer,
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], "New Item")
-        self.assertTrue(FirstApp.objects.filter(name="New Item").exists())
+        self.assertTrue(Employee.objects.filter(name="New Item").exists())
 
     def test_post_validation_error(self) -> None:
         """Test creating instance with validation error."""
         request = _make_authenticated_request(
-            "POST", "/first_app/", data={"description": "Missing name"}, token=self.token
+            "POST", "/employee/", data={"description": "Missing name"}, token=self.token
         )
         response = CRUDUtils.post(
             request=request,
-            serializer_class=FirstAppSerializer,
+            serializer_class=EmployeeSerializer,
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
