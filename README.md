@@ -1,12 +1,4 @@
 # Django Basic App
-
-[![PyPI version](https://img.shields.io/pypi/v/django-basic-app)](https://pypi.org/project/django-basic-app/)
-[![Python](https://img.shields.io/badge/python-%3E=3.12-blue)](https://img.shields.io/badge/python-%3E=3.12-blue)
-[![Development Status](https://img.shields.io/badge/status-stable-green)](https://img.shields.io/badge/status-stable-green)
-[![Maintenance](https://img.shields.io/maintenance/yes/2026)](https://img.shields.io/maintenance/yes/2026)
-[![PyPI](https://img.shields.io/pypi/dm/django-basic-app)](https://img.shields.io/pypi/dm/django-basic-app)
-[![License](https://img.shields.io/pypi/l/django-basic-app)](https://img.shields.io/pypi/l/django-basic-app)
-
 A production-ready Django REST Framework template with enterprise-grade CRUD utilities, versioned data management, data status workflow, and CI integration out of the box.
 
 ---
