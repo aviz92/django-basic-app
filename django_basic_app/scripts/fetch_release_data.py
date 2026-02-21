@@ -9,9 +9,9 @@ Usage:
     python fetch_release_data.py --release-version v1.1.0 --status approved
     python fetch_release_data.py --release-version v1.1.0 --base-url http://prod-server:8000
 """
+
 import argparse
 import os
-from typing import Optional
 
 from dotenv import load_dotenv
 from pyrest_model_client import RestApiClient, build_header, get_model_fields
@@ -21,6 +21,7 @@ load_dotenv()
 
 
 # ── Models ────────────────────────────────────────────────────────────────────
+
 
 class FirstApp(BaseAPIModel):
     name: str
@@ -40,36 +41,31 @@ MODELS: list[type[BaseAPIModel]] = [
 
 # ── Fetch logic ───────────────────────────────────────────────────────────────
 
+
 def fetch_all_pages(client: RestApiClient, endpoint: str, params: dict) -> list:
     """Fetches all pages from a paginated endpoint."""
     results = []
     current_params = params.copy()
 
-    while True:
-        res = client.get(endpoint, params=current_params)
-        if not res:
-            break
-
+    while res := client.get(endpoint, params=current_params):  # pylint: disable=W0149
         # Handle both paginated and non-paginated responses
         if isinstance(res, list):
             results.extend(res)
             break
-        else:
-            results.extend(res.get("results", []))
-            if not res.get("next"):
-                break
-            page = res["next"].split("page=")[-1].split("&")[0]
-            current_params = {**params, "page": page}
-
+        results.extend(res.get("results", []))
+        if not res.get("next"):
+            break
+        page = res["next"].split("page=")[-1].split("&")[0]
+        current_params = {**params, "page": page}
     return results
 
 
 def fetch_release_data(
     release_version: str,
     base_url: str,
-    token: Optional[str] = None,
-    status_filter: Optional[str] = None,
-):
+    token: str | None = None,
+    status_filter: str | None = None,
+) -> dict[str, list[BaseAPIModel]]:
     """
     Fetches all data for a given release version.
 
@@ -109,16 +105,19 @@ def fetch_release_data(
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
-def main():
-    parser = argparse.ArgumentParser(description='Fetch release data from the API')
-    parser.add_argument('--base-url', help="Base URL for the API", default=os.getenv('BASE_URL', 'http://localhost:8000'))
-    parser.add_argument('--release-version', help='e.g. v1.1.0', default=os.getenv('RELEASE_VERSION'))
-    parser.add_argument('--token', help='Optional auth token', default=os.getenv('TOKEN'))
+
+def main() -> dict:
+    parser = argparse.ArgumentParser(description="Fetch release data from the API")
     parser.add_argument(
-        '--status',
-        choices=['draft', 'future', 'approved'],
-        default='draft',
-        help='Filter by data status (default: approved)',
+        "--base-url", help="Base URL for the API", default=os.getenv("BASE_URL", "http://localhost:8000")
+    )
+    parser.add_argument("--release-version", help="e.g. v1.1.0", default=os.getenv("RELEASE_VERSION"))
+    parser.add_argument("--token", help="Optional auth token", default=os.getenv("TOKEN"))
+    parser.add_argument(
+        "--status",
+        choices=["draft", "future", "approved"],
+        default="draft",
+        help="Filter by data status (default: approved)",
     )
     args = parser.parse_args()
 
@@ -133,6 +132,5 @@ def main():
     return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

@@ -1,6 +1,5 @@
-from django.db import models
-
 from apps.core.mixins import VersionedModel
+from django.db import models
 
 
 class FirstApp(VersionedModel):
@@ -11,7 +10,7 @@ class FirstApp(VersionedModel):
     description = models.TextField(verbose_name="Description", null=True, blank=True)
 
     class Meta:
-        unique_together = [('release', 'name')]
+        unique_together = [("release", "name")]
 
     def __str__(self) -> str:
         return self.name

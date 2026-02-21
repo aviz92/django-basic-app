@@ -8,26 +8,26 @@ Models are discovered automatically — no manual registration needed.
 Any model that inherits from VersionedModel is included in the copy,
 ordered automatically by FK dependencies (topological sort).
 """
-from django.db import transaction
-from django.apps import apps
 
+from apps.core.mixins import VersionedModel
+from apps.core.models import Release
+from django.apps import apps
+from django.db import transaction
+from django.db.models import Model
 
 # ── Auto-discovery ────────────────────────────────────────────────────────────
 
-def get_versioned_models():
+
+def get_versioned_models() -> list[type[Model]]:
     """
     Find every model that inherits from VersionedModel — automatically.
     No manual list to maintain. Adding a new model that inherits from
     VersionedModel is enough — it will be included in the next release copy.
     """
-    from apps.core.mixins import VersionedModel
-    return [
-        model for model in apps.get_models()
-        if issubclass(model, VersionedModel) and model is not VersionedModel
-    ]
+    return [model for model in apps.get_models() if issubclass(model, VersionedModel) and model is not VersionedModel]
 
 
-def get_versioned_models_ordered():
+def get_versioned_models_ordered() -> list[type[VersionedModel]]:
     """
     Returns versioned models sorted by FK dependencies (parents before children).
 
@@ -42,7 +42,7 @@ def get_versioned_models_ordered():
     # Build dependency graph: model -> set of models it depends on
     graph = {m: set() for m in models}
     for model in models:
-        for field in model._meta.get_fields():
+        for field in model._meta.get_fields():  # pylint: disable=W0212
             if not field.is_relation or not field.many_to_one:
                 continue
             related = field.related_model
@@ -53,7 +53,7 @@ def get_versioned_models_ordered():
     ordered = []
     no_deps = [m for m, deps in graph.items() if not deps]
 
-    while no_deps:
+    while no_deps:  # pylint: disable=W0149
         m = no_deps.pop()
         ordered.append(m)
         for other, deps in graph.items():
@@ -65,15 +65,15 @@ def get_versioned_models_ordered():
     # Catch circular dependencies (shouldn't happen in a well-designed schema)
     if len(ordered) != len(models):
         remaining = [m.__name__ for m in models if m not in ordered]
-        raise RuntimeError(
-            f'Circular FK dependency detected among versioned models: {remaining}'
-        )
+        raise RuntimeError(f"Circular FK dependency detected among versioned models: {remaining}")
 
     return ordered
 
 
 @transaction.atomic
-def create_release(version: str, based_on_version: str, description: str = '', user=None):
+def create_release(
+    version: str, based_on_version: str, description: str = "", user: Release.created_by.field.related_model = None
+) -> Release:
     """
     Called by CI when a new release (or patch) is needed.
 
@@ -83,17 +83,15 @@ def create_release(version: str, based_on_version: str, description: str = '', u
       3. Copy ALL versioned rows from based_on -> new release (auto-discovered)
       4. Return the new Release (ready for architects to edit)
     """
-    from apps.core.models import Release
-
     try:
         source_release = Release.objects.get(version=based_on_version)
-    except Release.DoesNotExist:
-        raise ValueError(f'Source release "{based_on_version}" does not exist.')
+    except Release.DoesNotExist as exc:
+        raise ValueError(f'Source release "{based_on_version}" does not exist.') from exc
 
     if not source_release.is_locked:
         raise ValueError(
             f'Source release "{based_on_version}" is not locked yet. '
-            f'You can only branch from a locked (released) version.'
+            f"You can only branch from a locked (released) version."
         )
 
     new_release = Release.objects.create(
@@ -113,60 +111,58 @@ def create_release(version: str, based_on_version: str, description: str = '', u
     return new_release
 
 
-def _copy_model_rows(model, source_release, new_release, id_mapping):
+def _copy_model_rows(
+    model: type[VersionedModel], source_release: Release, new_release: Release, id_mapping: dict
+) -> None:
     """
     Copies all rows of a model from source_release to new_release.
     Handles FK remapping so relations point to the new copies, not the originals.
     """
-    source_rows = model.objects.for_release(source_release).select_related('release')
-    model_key = f'{model._meta.app_label}.{model.__name__}'
+    source_rows = model.objects.for_release(source_release).select_related("release")
+    model_key = f"{model._meta.app_label}.{model.__name__}"  # pylint: disable=W0212
     id_mapping[model_key] = {}
 
     for row in source_rows:
         old_id = row.pk
         field_values = {}
 
-        for field in model._meta.get_fields():
-            if not hasattr(field, 'column'):
+        for field in model._meta.get_fields():  # pylint: disable=W0212
+            if not hasattr(field, "column"):
                 continue
             if field.primary_key:
                 continue
-            if field.name == 'release':
+            if field.name == "release":
                 continue
 
             if field.is_relation and field.many_to_one:
                 related_model = field.related_model
-                related_key = f'{related_model._meta.app_label}.{related_model.__name__}'
-                if related_key in id_mapping:
-                    old_fk_id = getattr(row, f'{field.name}_id')
-                    if old_fk_id is not None:
+                # pylint: disable=W0212
+                if (related_key := f"{related_model._meta.app_label}.{related_model.__name__}") in id_mapping:
+                    if (old_fk_id := getattr(row, f"{field.name}_id")) is not None:
                         new_related = id_mapping[related_key].get(old_fk_id)
-                        field_values[f'{field.name}_id'] = (
-                            new_related.pk if new_related else old_fk_id
-                        )
+                        field_values[f"{field.name}_id"] = new_related.pk if new_related else old_fk_id
                     else:
-                        field_values[f'{field.name}_id'] = None
+                        field_values[f"{field.name}_id"] = None
                     continue
 
             field_values[field.name] = getattr(row, field.attname)
 
         new_row = model(**field_values, release=new_release)
         model.objects.bulk_create([new_row])  # bypass save() lock check intentionally
-        new_row = model.objects.for_release(new_release).order_by('-pk').first()
+        new_row = model.objects.for_release(new_release).order_by("-pk").first()
         id_mapping[model_key][old_id] = new_row
 
 
 @transaction.atomic
-def lock_release(version: str):
+def lock_release(version: str) -> Release:
     """
     Called by CI when a version is officially released.
     After this, no edits are possible -- patches must create a new version.
     """
-    from apps.core.models import Release
     try:
         release = Release.objects.get(version=version)
-    except Release.DoesNotExist:
-        raise ValueError(f'Release "{version}" does not exist.')
+    except Release.DoesNotExist as exc:
+        raise ValueError(f'Release "{version}" does not exist.') from exc
 
     if release.is_locked:
         raise ValueError(f'Release "{version}" is already locked.')

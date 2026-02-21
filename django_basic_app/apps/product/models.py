@@ -1,5 +1,5 @@
-from django.db import models
 from apps.core.mixins import VersionedModel
+from django.db import models
 
 
 class Category(VersionedModel):
@@ -7,9 +7,9 @@ class Category(VersionedModel):
     description = models.TextField(blank=True)
 
     class Meta:
-        unique_together = [('release', 'name')]
+        unique_together = [("release", "name")]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -21,13 +21,13 @@ class Product(VersionedModel):
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
-        related_name='products',
+        related_name="products",
     )
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = [('release', 'name')]
+        unique_together = [("release", "name")]
         # ordering = ['name']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name

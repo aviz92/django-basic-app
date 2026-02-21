@@ -14,14 +14,15 @@ Status flow:
 CI runs against: status=APPROVED
 Architects edit: status=DRAFT or FUTURE
 """
-from django.db import models
+
 from django.core.exceptions import ValidationError
+from django.db import models
 
 
 class DataStatus(models.TextChoices):
-    DRAFT = ('draft', 'Draft')
-    FUTURE = ('future', 'Future')
-    APPROVED = ('approved', 'Approved')
+    DRAFT = ("draft", "Draft")
+    FUTURE = ("future", "Future")
+    APPROVED = ("approved", "Approved")
 
 
 class VersionedModel(models.Model):
@@ -39,9 +40,9 @@ class VersionedModel(models.Model):
     """
 
     release = models.ForeignKey(
-        'core.Release',
+        "core.Release",
         on_delete=models.CASCADE,
-        related_name='%(app_label)s_%(class)s_set',
+        related_name="%(app_label)s_%(class)s_set",
     )
     status = models.CharField(
         max_length=20,
@@ -54,11 +55,11 @@ class VersionedModel(models.Model):
 
     class VersionedManager(models.Manager):
 
-        def for_release(self, release):
+        def for_release(self, release: models.Model) -> models.QuerySet:
             """All rows for a release, regardless of status."""
             return self.get_queryset().filter(release=release)
 
-        def approved(self, release):
+        def approved(self, release: models.Model) -> models.QuerySet:
             """Only approved rows — what CI runs against."""
             return self.get_queryset().filter(
                 release=release,
@@ -69,49 +70,43 @@ class VersionedModel(models.Model):
 
     # ── Status transitions ────────────────────────────────────────────────────
 
-    def mark_future(self):
+    def mark_future(self) -> None:
         """DRAFT → FUTURE. Called by architects."""
         if self.status != DataStatus.DRAFT:
-            raise ValidationError(
-                f'Can only move to FUTURE from DRAFT. Current status: {self.status}'
-            )
+            raise ValidationError(f"Can only move to FUTURE from DRAFT. Current status: {self.status}")
         self.status = DataStatus.FUTURE
-        self.save(update_fields=['status'])
+        self.save(update_fields=["status"])
 
-    def mark_draft(self):
+    def mark_draft(self) -> None:
         """FUTURE → DRAFT. Allows rework."""
         if self.status != DataStatus.FUTURE:
-            raise ValidationError(
-                f'Can only move back to DRAFT from FUTURE. Current status: {self.status}'
-            )
+            raise ValidationError(f"Can only move back to DRAFT from FUTURE. Current status: {self.status}")
         self.status = DataStatus.DRAFT
-        self.save(update_fields=['status'])
+        self.save(update_fields=["status"])
 
-    def approve(self):
+    def approve(self) -> None:
         """
         DRAFT → APPROVED or FUTURE → APPROVED.
         One-way. Called by CI only.
         """
         if self.status == DataStatus.APPROVED:
-            raise ValidationError('Row is already approved.')
+            raise ValidationError("Row is already approved.")
         self.status = DataStatus.APPROVED
-        self.save(update_fields=['status'])
+        self.save(update_fields=["status"])
 
     # ── Lock enforcement ──────────────────────────────────────────────────────
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: tuple, **kwargs: dict) -> None:
         if self.release.is_locked and self.status != DataStatus.APPROVED:
             raise ValidationError(
-                f'Release {self.release.version} is locked and cannot be modified. '
-                f'Create a new release (patch) instead.'
+                f"Release {self.release.version} is locked and cannot be modified. "
+                f"Create a new release (patch) instead."
             )
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args: tuple, **kwargs: dict) -> None:
         if self.release.is_locked:
-            raise ValidationError(
-                f'Release {self.release.version} is locked. Cannot delete rows.'
-            )
+            raise ValidationError(f"Release {self.release.version} is locked. Cannot delete rows.")
         super().delete(*args, **kwargs)
 
     class Meta:

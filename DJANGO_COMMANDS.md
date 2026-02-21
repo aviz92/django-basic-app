@@ -40,7 +40,7 @@ This document provides a list of common Django management commands that can be u
 
 #### approve_release:
 - `uv run python manage.py approve_release --release-version v1.1.0`: Approves the specified release version, indicating that it has passed all necessary checks and is ready for deployment.
-- `uv run python manage.py approve_release --release-version v1.1.0 --only-future`: Approves the specified release version, but only if it is a future release (i.e., its version number is greater than the current version). This can be used to ensure that only upcoming releases are approved, while past releases remain unaffected. 
+- `uv run python manage.py approve_release --release-version v1.1.0 --only-future`: Approves the specified release version, but only if it is a future release (i.e., its version number is greater than the current version). This can be used to ensure that only upcoming releases are approved, while past releases remain unaffected.
 
 #### deprecate_release:
 - `uv run python manage.py deprecate_release --release-version v1.0.0`: Deprecates the specified release version, indicating that it is no longer recommended for use and may be removed in the future.
