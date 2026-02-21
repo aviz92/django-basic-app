@@ -21,5 +21,4 @@ class DepartmentAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        ("Relations", {"fields": ("employee",)}),
     )

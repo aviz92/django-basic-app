@@ -176,14 +176,15 @@ class TestCRUDUtilsGet(TestCase):
             )
 
     def test_get_list_with_foreignkey_lookup(self) -> None:
-        """Test filtering with ForeignKey lookup."""
-        emp = Employee.objects.get(name="test1")
-        Department.objects.create(name="dept1", employee=emp, release=self.release)
-        Department.objects.create(name="dept2", employee=self.employee_instances[1], release=self.release)
+        """Test filtering Department list by department name."""
+        dept1 = Department.objects.create(name="dept1", release=self.release)
+        dept2 = Department.objects.create(name="dept2", release=self.release)
+        self.employee_instances[0].department = dept1
+        self.employee_instances[0].save()
+        self.employee_instances[1].department = dept2
+        self.employee_instances[1].save()
 
-        request = _make_authenticated_request(
-            "GET", "/department/", query_params={"employee__name": "test1"}, token=self.token
-        )
+        request = _make_authenticated_request("GET", "/department/", query_params={"name": "dept1"}, token=self.token)
         response = CRUDUtils.get(
             request=request,
             model_class=Department,
