@@ -9,6 +9,14 @@ class Employee(VersionedModel):
     updated_at = models.DateTimeField(verbose_name="Updated at", auto_now=True)
     name = models.CharField(verbose_name="Name", max_length=255, blank=False)
     description = models.TextField(verbose_name="Description", null=True, blank=True)
+    department = models.ForeignKey(
+        "department.Department",
+        verbose_name="employee",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="employees",
+    )
 
     class Meta:
         unique_together = [("release", "name")]

@@ -16,6 +16,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
+from ..department.models import Department
 from .models import Employee
 
 User = get_user_model()
@@ -45,6 +46,14 @@ class TestEmployeeModel(TestCase):
         """Test that created_at is auto-set."""
         instance = Employee.objects.create(name="Test", release=self.release)
         self.assertIsNotNone(instance.created_at)
+
+    def test_model_foreignkey_relationship(self) -> None:
+        """Test ForeignKey relationship to Department."""
+        department = Department.objects.create(name="Test Dept", release=self.release)
+        employee = Employee.objects.create(name="test1", release=self.release, department=department)
+
+        self.assertEqual(employee.department, department)
+        self.assertEqual(employee.department.name, "Test Dept")
 
 
 class TestEmployeeAPI(TestCase):
@@ -83,6 +92,23 @@ class TestEmployeeAPI(TestCase):
         self.assertEqual(response.data["name"], "New Item")
         self.assertTrue(Employee.objects.filter(name="New Item").exists())
 
+    def test_create_instance_with_department_name(self) -> None:
+        """Test creating an Employee with department_name (SlugRelatedField)."""
+        department = Department.objects.create(name="Engineering", release=self.release)
+        data = {
+            "name": "New Employee",
+            "description": "In Engineering",
+            "release": self.release.pk,
+            "department_name": department.name,
+        }
+        response = self.api_client.post("/employee/", data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], "New Employee")
+        emp = Employee.objects.get(name="New Employee")
+        self.assertEqual(emp.department, department)
+        self.assertEqual(emp.department.name, "Engineering")
+
     def test_retrieve_instance(self) -> None:
         """Test retrieving a single instance."""
         instance = Employee.objects.create(name="test1", description="Test", release=self.release)
@@ -102,6 +128,21 @@ class TestEmployeeAPI(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 2)
+
+    def test_filter_with_department(self) -> None:
+        """Test filtering employees by department (ForeignKey lookup)."""
+        dept1 = Department.objects.create(name="Dept A", release=self.release)
+        dept2 = Department.objects.create(name="Dept B", release=self.release)
+        Employee.objects.create(name="alice", release=self.release, department=dept1)
+        Employee.objects.create(name="bob", release=self.release, department=dept1)
+        Employee.objects.create(name="charlie", release=self.release, department=dept2)
+
+        response = self.api_client.get("/employee/?department__name=Dept A")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 2)
+        names = {r["name"] for r in response.data["results"]}
+        self.assertEqual(names, {"alice", "bob"})
 
     def test_update_instance(self) -> None:
         """Test updating an instance."""

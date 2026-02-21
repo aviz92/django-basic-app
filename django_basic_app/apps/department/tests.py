@@ -44,11 +44,11 @@ class TestDepartmentModel(TestCase):
 
     def test_model_foreignkey_relationship(self) -> None:
         """Test ForeignKey relationship."""
-        employee = Employee.objects.create(name="test1", release=self.release)
-        department = Department.objects.create(name="Test", employee=employee, release=self.release)
+        department = Department.objects.create(name="Test", release=self.release)
+        employee = Employee.objects.create(name="test1", release=self.release, department=department)
 
-        self.assertEqual(department.employee, employee)
-        self.assertEqual(department.employee.name, "test1")
+        self.assertEqual(employee.department, department)
+        self.assertEqual(employee.department.name, "Test")
 
 
 class TestDepartmentAPI(TestCase):
@@ -67,8 +67,10 @@ class TestDepartmentAPI(TestCase):
 
     def test_list_all_instances(self) -> None:
         """Test listing all Department instances."""
-        Department.objects.create(name="dept1", employee=self.employee, release=self.release)
-        Department.objects.create(name="dept2", employee=None, release=self.release)
+        dept1 = Department.objects.create(name="dept1", release=self.release)
+        Department.objects.create(name="dept2", release=self.release)
+        self.employee.department = dept1
+        self.employee.save()
 
         response = self.api_client.get("/department/")
 
@@ -81,8 +83,7 @@ class TestDepartmentAPI(TestCase):
         data = {
             "name": "New Dept",
             "description": "New Description",
-            "employee_name": self.employee.name,
-            "release": self.release.pk,
+            "release_version": self.release.version,
         }
         response = self.api_client.post("/department/", data, format="json")
 
@@ -91,11 +92,13 @@ class TestDepartmentAPI(TestCase):
         self.assertTrue(Department.objects.filter(name="New Dept").exists())
 
     def test_filter_with_foreignkey(self) -> None:
-        """Test filtering with ForeignKey lookup."""
-        Department.objects.create(name="dept1", employee=self.employee, release=self.release)
-        Department.objects.create(name="dept2", employee=None, release=self.release)
+        """Test filtering by department name (employee belongs to department)."""
+        dept1 = Department.objects.create(name="dept1", release=self.release)
+        Department.objects.create(name="dept2", release=self.release)
+        self.employee.department = dept1
+        self.employee.save()
 
-        response = self.api_client.get("/department/?employee__name=test1")
+        response = self.api_client.get("/department/?name=dept1")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 1)

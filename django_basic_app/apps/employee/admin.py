@@ -20,4 +20,5 @@ class EmployeeAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        ("Relations", {"fields": ("department",)}),
     )

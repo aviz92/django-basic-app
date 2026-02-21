@@ -1,6 +1,7 @@
 from django_versioned_models.models import Release
 from rest_framework import serializers
 
+from ..department.models import Department
 from .models import Employee
 
 
@@ -11,6 +12,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
     release = serializers.PrimaryKeyRelatedField(
         queryset=Release.objects.all(),
         required=True,
+    )
+    department_name = serializers.SlugRelatedField(
+        source="department",
+        queryset=Department.objects.all(),
+        slug_field="name",
+        required=False,
+        allow_null=True,
+        help_text="Name of the related Department instance (optional).",
     )
 
     class Meta:
