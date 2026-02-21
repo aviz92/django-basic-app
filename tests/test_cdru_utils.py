@@ -184,9 +184,7 @@ class TestCRUDUtilsGet(TestCase):
         self.employee_instances[1].department = dept2
         self.employee_instances[1].save()
 
-        request = _make_authenticated_request(
-            "GET", "/department/", query_params={"name": "dept1"}, token=self.token
-        )
+        request = _make_authenticated_request("GET", "/department/", query_params={"name": "dept1"}, token=self.token)
         response = CRUDUtils.get(
             request=request,
             model_class=Department,
