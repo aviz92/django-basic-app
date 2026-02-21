@@ -50,12 +50,12 @@ class Release(models.Model):
 
     def __str__(self):
         if self.is_deprecated:
-            status = 'deprecated'
+            status = '🗄️️'
         elif self.is_locked:
-            status = 'locked'
+            status = '🔒'
         else:
-            status = 'editable'
-        return f'{self.version} ({status})'
+            status = '✏️'
+        return f'{status} {self.version}'
 
     def lock(self):
         from django.utils import timezone
