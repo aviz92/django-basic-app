@@ -27,7 +27,7 @@ class FirstApp(BaseAPIModel):
     name: str
     description: str | None = None
     status: str | None = None
-    resource_path: str = "first_app"
+    resource_path: str = "employee"
 
 
 # Register all models here — add new ones as you expand the project

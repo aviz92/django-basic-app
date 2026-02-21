@@ -10,8 +10,8 @@ A production-ready Django REST Framework template with enterprise-grade CRUD uti
 **Advanced Filtering**
 - Wildcard search patterns for text fields (`name=test*`, `name=*test*`)
 - Comparison operators for number fields (`age=>=18`, `age=10-20`)
-- ForeignKey lookups (`first_app__name=test*`)
-- Nested ForeignKey support (`first_app__category__name=prod*`)
+- ForeignKey lookups (`employee__name=test*`)
+- Nested ForeignKey support (`employee__category__name=prod*`)
 - Automatic validation - invalid fields return empty results
 
 **Pagination**
@@ -197,9 +197,9 @@ create_release --release-version v1.1.1 --based-on v1.1.0
 All versioned endpoints accept a `version` query parameter:
 
 ```
-GET /api/first_app/?version=v1.1.0              # all statuses
-GET /api/first_app/?version=v1.1.0&status=approved
-GET /api/first_app/?version=v1.1.0&status=draft
+GET /api/employee/?version=v1.1.0              # all statuses
+GET /api/employee/?version=v1.1.0&status=approved
+GET /api/employee/?version=v1.1.0&status=draft
 ```
 
 ### Release Endpoints
@@ -259,7 +259,7 @@ class FirstApp(BaseAPIModel):
     name: str
     description: str | None = None
     status: str | None = None
-    resource_path: str = "first_app"
+    resource_path: str = "employee"
 
 MODELS = [FirstApp, ...]
 ```
@@ -284,12 +284,12 @@ django_basic_app/
 │   │       ├── unlock_release.py
 │   │       ├── approve_release.py
 │   │       └── deprecate_release.py
-│   └── first_app/                   # Example versioned app
+│   └── employee/                    # Example versioned app
 │       ├── models.py                # class FirstApp(VersionedModel)
 │       ├── serializers.py
 │       ├── views.py
 │       └── urls.py
-│   └── second_app/                  # Example versioned app
+│   └── department/                  # Example versioned app
 │       ├── models.py                # class SecondAppApp(VersionedModel)
 │       ├── serializers.py
 │       ├── views.py

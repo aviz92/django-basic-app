@@ -1,16 +1,15 @@
 from django.contrib import admin
 
-from .models import SecondApp
+from .models import Employee
 
 
-@admin.register(SecondApp)
-class SecondAppAdmin(admin.ModelAdmin):
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
     list_display = ("id", "created_at", "updated_at", "name")
     search_fields = ("name",)
     readonly_fields = ("id", "created_at", "updated_at")
     save_on_top = True
     fieldsets = (
-        ("Timestamps", {"fields": ("created_at", "updated_at")}),
         (
             "Basic Info",
             {
@@ -21,5 +20,4 @@ class SecondAppAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        ("Relations", {"fields": ("first_app",)}),
     )

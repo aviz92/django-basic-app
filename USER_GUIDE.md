@@ -24,7 +24,7 @@ Complete guide for using the REST API endpoints. This guide shows you how to int
 **Example Request:**
 ```bash
 curl -H "Authorization: Token YOUR_TOKEN" \
-     http://127.0.0.1:8000/first_app/
+     http://127.0.0.1:8000/employee/
 ```
 
 ## Authentication
@@ -47,7 +47,7 @@ Authorization: Token YOUR_TOKEN_HERE
 **cURL Example:**
 ```bash
 curl -H "Authorization: Token abc123..." \
-     http://127.0.0.1:8000/first_app/
+     http://127.0.0.1:8000/employee/
 ```
 
 **Python Example:**
@@ -57,12 +57,12 @@ import requests
 headers = {
     'Authorization': 'Token YOUR_TOKEN_HERE'
 }
-response = requests.get('http://127.0.0.1:8000/first_app/', headers=headers)
+response = requests.get('http://127.0.0.1:8000/employee/', headers=headers)
 ```
 
 **JavaScript Example:**
 ```javascript
-fetch('http://127.0.0.1:8000/first_app/', {
+fetch('http://127.0.0.1:8000/employee/', {
     headers: {
         'Authorization': 'Token YOUR_TOKEN_HERE'
     }
@@ -75,64 +75,64 @@ fetch('http://127.0.0.1:8000/first_app/', {
 
 **List All Items:**
 ```
-GET /first_app/
+GET /employee/
 ```
 
 **Get Single Item:**
 ```
-GET /first_app/{id}/
+GET /employee/{id}/
 ```
 
 **Create New Item:**
 ```
-POST /first_app/
+POST /employee/
 ```
 
 **Update Item (Full):**
 ```
-PUT /first_app/{id}/
+PUT /employee/{id}/
 ```
 
 **Update Item (Partial):**
 ```
-PATCH /first_app/{id}/
+PATCH /employee/{id}/
 ```
 
 **Delete Item:**
 ```
-DELETE /first_app/{id}/
+DELETE /employee/{id}/
 ```
 
 ### Second App Endpoints
 
 **List All Items:**
 ```
-GET /second_app/
+GET /department/
 ```
 
 **Get Single Item:**
 ```
-GET /second_app/{id}/
+GET /department/{id}/
 ```
 
 **Create New Item:**
 ```
-POST /second_app/
+POST /department/
 ```
 
 **Update Item (Full):**
 ```
-PUT /second_app/{id}/
+PUT /department/{id}/
 ```
 
 **Update Item (Partial):**
 ```
-PATCH /second_app/{id}/
+PATCH /department/{id}/
 ```
 
 **Delete Item:**
 ```
-DELETE /second_app/{id}/
+DELETE /department/{id}/
 ```
 
 ## Search & Filtering
@@ -170,74 +170,74 @@ You can filter by related ForeignKey fields using double underscores (`__`):
 
 | Pattern | Description | Example |
 |---------|-------------|---------|
-| `related__field=value*` | Text field in related model | `?first_app__name=test*` |
-| `related__field=>=value` | Number field in related model | `?first_app__age=>=18` |
-| `related__related__field=value` | Nested ForeignKey lookup | `?first_app__category__name=prod*` |
+| `related__field=value*` | Text field in related model | `?employee__name=test*` |
+| `related__field=>=value` | Number field in related model | `?employee__age=>=18` |
+| `related__related__field=value` | Nested ForeignKey lookup | `?employee__category__name=prod*` |
 
 ### Search Examples
 
 **Search by name starting with "test":**
 ```
-GET /first_app/?name=test*
+GET /employee/?name=test*
 ```
 
 **Search by name ending with "ing":**
 ```
-GET /first_app/?name=*ing
+GET /employee/?name=*ing
 ```
 
 **Search by name containing "test":**
 ```
-GET /first_app/?name=*test*
+GET /employee/?name=*test*
 ```
 
 **Search by exact name match:**
 ```
-GET /first_app/?name=test
+GET /employee/?name=test
 # Matches exactly "test" (case-insensitive)
 ```
 
 **Search with middle wildcard:**
 ```
-GET /first_app/?name=t*t
+GET /employee/?name=t*t
 # Matches: "test", "tart", "t123t"
 ```
 
 **Multiple filters:**
 ```
-GET /first_app/?name=test*&description=*important*
+GET /employee/?name=test*&description=*important*
 ```
 
 **Search in Second App:**
 ```
-GET /second_app/?name=prod*
+GET /department/?name=prod*
 ```
 
 **Number field filtering (exact match):**
 ```
-GET /first_app/?age=25
+GET /employee/?age=25
 ```
 
 **Number field filtering (comparison):**
 ```
-GET /first_app/?age=>=18
-GET /first_app/?age=<=65
-GET /first_app/?age=18-30
+GET /employee/?age=>=18
+GET /employee/?age=<=65
+GET /employee/?age=18-30
 ```
 
 **ForeignKey lookup (text field):**
 ```
-GET /second_app/?first_app__name=test*
+GET /department/?employee__name=test*
 ```
 
 **ForeignKey lookup (number field):**
 ```
-GET /second_app/?first_app__age=>=18
+GET /department/?employee__age=>=18
 ```
 
 **Nested ForeignKey lookup:**
 ```
-GET /third_app/?second_app__first_app__name=prod*
+GET /third_app/?department__employee__name=prod*
 ```
 
 ### Filtering Rules
@@ -264,22 +264,22 @@ Results are paginated by default (20 items per page).
 
 **Get first page:**
 ```
-GET /first_app/
+GET /employee/
 ```
 
 **Get second page:**
 ```
-GET /first_app/?page=2
+GET /employee/?page=2
 ```
 
 **Get 50 items per page:**
 ```
-GET /first_app/?page_size=50
+GET /employee/?page_size=50
 ```
 
 **Combine pagination with search:**
 ```
-GET /first_app/?name=test*&page=2&page_size=50
+GET /employee/?name=test*&page=2&page_size=50
 ```
 
 ### Paginated Response Format
@@ -287,7 +287,7 @@ GET /first_app/?name=test*&page=2&page_size=50
 ```json
 {
   "count": 150,
-  "next": "http://127.0.0.1:8000/first_app/?page=2",
+  "next": "http://127.0.0.1:8000/employee/?page=2",
   "previous": null,
   "results": [
     {
@@ -322,22 +322,22 @@ Sort results using the `ordering` parameter.
 
 **Sort by name (ascending):**
 ```
-GET /first_app/?ordering=name
+GET /employee/?ordering=name
 ```
 
 **Sort by created date (newest first):**
 ```
-GET /first_app/?ordering=-created_at
+GET /employee/?ordering=-created_at
 ```
 
 **Sort by multiple fields:**
 ```
-GET /first_app/?ordering=name,-created_at
+GET /employee/?ordering=name,-created_at
 ```
 
 **Combine sorting with search:**
 ```
-GET /first_app/?name=test*&ordering=-created_at
+GET /employee/?name=test*&ordering=-created_at
 ```
 
 ## Request Examples
@@ -346,7 +346,7 @@ GET /first_app/?name=test*&ordering=-created_at
 
 ```bash
 curl -H "Authorization: Token YOUR_TOKEN" \
-     http://127.0.0.1:8000/first_app/
+     http://127.0.0.1:8000/employee/
 ```
 
 **Response:** List of all items (paginated)
@@ -355,7 +355,7 @@ curl -H "Authorization: Token YOUR_TOKEN" \
 
 ```bash
 curl -H "Authorization: Token YOUR_TOKEN" \
-     http://127.0.0.1:8000/first_app/1/
+     http://127.0.0.1:8000/employee/1/
 ```
 
 **Response:** Single item object
@@ -370,7 +370,7 @@ curl -X POST \
        "name": "New Item",
        "description": "Item description"
      }' \
-     http://127.0.0.1:8000/first_app/
+     http://127.0.0.1:8000/employee/
 ```
 
 **Request Body (First App):**
@@ -386,7 +386,7 @@ curl -X POST \
 {
   "name": "New Item",
   "description": "Optional description",
-  "first_app": 1
+  "employee": 1
 }
 ```
 
@@ -402,7 +402,7 @@ curl -X PUT \
        "name": "Updated Item",
        "description": "Updated description"
      }' \
-     http://127.0.0.1:8000/first_app/1/
+     http://127.0.0.1:8000/employee/1/
 ```
 
 **Note:** PUT requires all fields. Missing fields will be set to null/default.
@@ -418,7 +418,7 @@ curl -X PATCH \
      -d '{
        "name": "Updated Name Only"
      }' \
-     http://127.0.0.1:8000/first_app/1/
+     http://127.0.0.1:8000/employee/1/
 ```
 
 **Note:** PATCH only updates provided fields.
@@ -430,7 +430,7 @@ curl -X PATCH \
 ```bash
 curl -X DELETE \
      -H "Authorization: Token YOUR_TOKEN" \
-     http://127.0.0.1:8000/first_app/1/
+     http://127.0.0.1:8000/employee/1/
 ```
 
 **Response:** 204 No Content (success)
@@ -553,37 +553,37 @@ curl -X DELETE \
 
 **Find all items with name starting with "test":**
 ```
-GET /first_app/?name=test*
+GET /employee/?name=test*
 ```
 
 **Find items created today:**
 ```
-GET /first_app/?created_at=2026-02-06*
+GET /employee/?created_at=2026-02-06*
 ```
 
 **Find items with specific description:**
 ```
-GET /first_app/?description=*important*
+GET /employee/?description=*important*
 ```
 
 **Find items with age >= 18:**
 ```
-GET /first_app/?age=>=18
+GET /employee/?age=>=18
 ```
 
 **Find items with age between 18 and 30:**
 ```
-GET /first_app/?age=18-30
+GET /employee/?age=18-30
 ```
 
 **Find Second App items by related First App name:**
 ```
-GET /second_app/?first_app__name=test*
+GET /department/?employee__name=test*
 ```
 
 **Find Second App items where related First App age >= 18:**
 ```
-GET /second_app/?first_app__age=>=18
+GET /department/?employee__age=>=18
 ```
 
 ### Use Case 2: Pagination
@@ -591,37 +591,37 @@ GET /second_app/?first_app__age=>=18
 **Browse through all items:**
 ```
 # Page 1
-GET /first_app/
+GET /employee/
 
 # Page 2
-GET /first_app/?page=2
+GET /employee/?page=2
 
 # Page 3 with 50 items
-GET /first_app/?page=3&page_size=50
+GET /employee/?page=3&page_size=50
 ```
 
 ### Use Case 3: Sorting
 
 **Get newest items first:**
 ```
-GET /first_app/?ordering=-created_at
+GET /employee/?ordering=-created_at
 ```
 
 **Get items sorted by name:**
 ```
-GET /first_app/?ordering=name
+GET /employee/?ordering=name
 ```
 
 **Combine search, sorting, and pagination:**
 ```
-GET /first_app/?name=test*&ordering=-created_at&page=1&page_size=20
+GET /employee/?name=test*&ordering=-created_at&page=1&page_size=20
 ```
 
 ### Use Case 4: Create and Update
 
 **Create a new item:**
 ```bash
-POST /first_app/
+POST /employee/
 {
   "name": "My New Item",
   "description": "Description here"
@@ -630,7 +630,7 @@ POST /first_app/
 
 **Update only the name:**
 ```bash
-PATCH /first_app/1/
+PATCH /employee/1/
 {
   "name": "Updated Name"
 }
@@ -638,7 +638,7 @@ PATCH /first_app/1/
 
 **Update all fields:**
 ```bash
-PUT /first_app/1/
+PUT /employee/1/
 {
   "name": "Updated Name",
   "description": "Updated Description"
@@ -649,26 +649,26 @@ PUT /first_app/1/
 
 **Create Second App item linked to First App:**
 ```bash
-POST /second_app/
+POST /department/
 {
   "name": "Second Item",
-  "first_app": 1
+  "employee": 1
 }
 ```
 
 **Search Second App items by related First App name:**
 ```
-GET /second_app/?first_app__name=test*
+GET /department/?employee__name=test*
 ```
 
 **Filter Second App items by related First App number field:**
 ```
-GET /second_app/?first_app__age=>=18
+GET /department/?employee__age=>=18
 ```
 
 **Combine multiple filters including ForeignKey:**
 ```
-GET /second_app/?name=prod*&first_app__name=test*&first_app__age=>=18
+GET /department/?name=prod*&employee__name=test*&employee__age=>=18
 ```
 
 ## Tips & Best Practices
@@ -681,7 +681,7 @@ GET /second_app/?name=prod*&first_app__name=test*&first_app__age=>=18
 6. **Empty results are normal** - `{"count": 0, "results": []}` means no matches found
 7. **Use sorting** - Combine with search for better results: `?name=test*&ordering=-created_at`
 8. **Use number comparisons** - `age=>=18` is more efficient than fetching all and filtering client-side
-9. **Use ForeignKey lookups** - Filter by related models: `first_app__name=test*`
+9. **Use ForeignKey lookups** - Filter by related models: `employee__name=test*`
 10. **Invalid fields return empty** - Non-existent fields or invalid values return empty results, not errors
 
 ## Need Help?

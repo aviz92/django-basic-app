@@ -25,6 +25,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("schema/", Schema.as_view()),  # http://127.0.0.1:8000/schema/
     # App paths
-    path("first_app/", include("apps.first_app.urls")),
-    path("second_app/", include("apps.second_app.urls")),
+    path("employee/", include("apps.employee.urls")),
+    path("department/", include("apps.department.urls")),
 ]

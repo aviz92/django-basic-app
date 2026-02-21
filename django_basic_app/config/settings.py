@@ -43,9 +43,8 @@ INSTALLED_APPS = [
     "schema_graph",
     "django_filters",
     "django_versioned_models",
-    "apps.product",
-    "apps.first_app",
-    "apps.second_app",
+    "apps.employee",
+    "apps.department",
 ]
 
 MIDDLEWARE = [
