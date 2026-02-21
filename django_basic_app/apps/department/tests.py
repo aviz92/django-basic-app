@@ -63,9 +63,7 @@ class TestDepartmentAPI(TestCase):
         self.api_client = APIClient()
         self.api_client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
-        self.employee = Employee.objects.create(
-            name="test1", description="Test 1", release=self.release
-        )
+        self.employee = Employee.objects.create(name="test1", description="Test 1", release=self.release)
 
     def test_list_all_instances(self) -> None:
         """Test listing all Department instances."""

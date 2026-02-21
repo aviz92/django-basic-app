@@ -1,6 +1,5 @@
-from rest_framework import serializers
-
 from django_versioned_models.models import Release
+from rest_framework import serializers
 
 from .models import Employee
 
