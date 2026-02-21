@@ -1,149 +1,320 @@
-![PyPI version](https://img.shields.io/pypi/v/django-basic-app)
-![Python](https://img.shields.io/badge/python->=3.12-blue)
-![Development Status](https://img.shields.io/badge/status-stable-green)
-![Maintenance](https://img.shields.io/maintenance/yes/2026)
-![PyPI](https://img.shields.io/pypi/dm/django-basic-app)
-![License](https://img.shields.io/pypi/l/django-basic-app)
-
----
-
 # Django Basic App
 
-A production-ready Django REST Framework template with enterprise-grade CRUD utilities, featuring advanced filtering, pagination, and bulk operations out of the box.
+[![PyPI version](https://img.shields.io/pypi/v/django-basic-app)](https://pypi.org/project/django-basic-app/)
+[![Python](https://img.shields.io/badge/python-%3E=3.12-blue)](https://img.shields.io/badge/python-%3E=3.12-blue)
+[![Development Status](https://img.shields.io/badge/status-stable-green)](https://img.shields.io/badge/status-stable-green)
+[![Maintenance](https://img.shields.io/maintenance/yes/2026)](https://img.shields.io/maintenance/yes/2026)
+[![PyPI](https://img.shields.io/pypi/dm/django-basic-app)](https://img.shields.io/pypi/dm/django-basic-app)
+[![License](https://img.shields.io/pypi/l/django-basic-app)](https://img.shields.io/pypi/l/django-basic-app)
+
+A production-ready Django REST Framework template with enterprise-grade CRUD utilities, versioned data management, data status workflow, and CI integration out of the box.
+
+---
 
 ## 🚀 Features
 
 ### Enterprise-Grade CRUD Utilities (`CRUDUtils`)
 
-- **🔍 Advanced Filtering**
-  - Wildcard search patterns for text fields (`name=test*`, `name=*test*`)
-  - Comparison operators for number fields (`age=>=18`, `age=10-20`)
-  - ForeignKey lookups (`first_app__name=test*`)
-  - Nested ForeignKey support (`first_app__category__name=prod*`)
-  - Automatic validation - invalid fields return empty results
+**Advanced Filtering**
+- Wildcard search patterns for text fields (`name=test*`, `name=*test*`)
+- Comparison operators for number fields (`age=>=18`, `age=10-20`)
+- ForeignKey lookups (`first_app__name=test*`)
+- Nested ForeignKey support (`first_app__category__name=prod*`)
+- Automatic validation - invalid fields return empty results
 
-- **📄 Pagination**
-  - Built-in pagination with customizable page size
-  - Default: 20 items per page, max: 100
+**Pagination**
+- Built-in pagination with customizable page size
+- Default: 20 items per page, max: 100
 
-- **🔄 Bulk Operations**
-  - Bulk create, update, and delete operations
-  - Partial success handling with detailed error reporting
+**Bulk Operations**
+- Bulk create, update, and delete operations
+- Partial success handling with detailed error reporting
 
-- **⚡ Performance Optimizations**
-  - `select_related` and `prefetch_related` support
-  - Queryset customization hooks
-  - Efficient database queries
+**Performance Optimizations**
+- `select_related` and `prefetch_related` support
+- Queryset customization hooks
+- Efficient database queries
 
-- **🛡️ Error Handling**
-  - Comprehensive validation
-  - Database constraint violation handling
-  - Detailed error messages
+**Error Handling**
+- Comprehensive validation
+- Database constraint violation handling
+- Detailed error messages
 
-- **📊 Sorting & Ordering**
-  - Flexible field-based sorting
-  - Multiple field ordering support
-  - Default ordering fallbacks
+**Sorting & Ordering**
+- Flexible field-based sorting
+- Multiple field ordering support
+- Default ordering fallbacks
 
 ---
 
-### Environment Setup
-Create a `.env` file in the project root:
-```bash
-# Required
-SECRET_DJANGO_KEY=your-secret-key-here
+### Versioned Data Management (`apps/core`)
 
-# Optional
-DJANGO_DEBUG=True
+Every model that inherits from `VersionedModel` participates in full version control — automatically.
+
+**Core concept:** every row in every table has `release = FK(Release)`. That's the entire versioning mechanism.
+
+```python
+class MyModel(VersionedModel):
+    name = models.CharField(max_length=255)
+    # Done. Auto-discovered, versioned, immutable when locked.
 ```
+
+**What you get automatically:**
+- `release` FK added to the table
+- `status` field (`draft` / `future` / `approved`)
+- `objects.for_release(release)` and `objects.approved(release)` manager methods
+- Included in `create_release` copy — with topological FK sort
+- Lock enforcement on `save()` and `delete()`
+
+#### Release Lifecycle
+
+```
+create_release → architects edit → approve_release → lock_release
+                                         ↑
+                              (CI runs tests here)
+```
+
+#### Data Status Workflow
+
+```
+DRAFT ⇄ FUTURE → APPROVED  (one-way, CI only)
+```
+
+| Status | Who | Meaning |
+|--------|-----|---------|
+| `DRAFT` | Architects | Being worked on, not ready |
+| `FUTURE` | Architects | Planned for a future release |
+| `APPROVED` | CI only | Stable — what tests run against |
+
+CI always queries `objects.approved(release)`. DRAFT and FUTURE rows are invisible to CI, so live edits never break tests.
 
 ---
 
 ## 🏃 Quick Start
 
-### 1. Run Migrations
+### Environment Setup
+
+Create a `.env` file in the project root:
+
+```env
+SECRET_DJANGO_KEY=your-secret-key-here
+DJANGO_DEBUG=True
+```
+
+### 1. Install dependencies
+
+```bash
+uv sync
+```
+
+### 2. Run migrations
+
 ```bash
 uv run python manage.py migrate
 ```
 
-### 2. Create Superuser
+### 3. Create superuser
+
 ```bash
 uv run python manage.py createsuperuser
 ```
 
-### 3. Start Development Server
+### 4. Create the first release
+
+The first release must be created manually via the shell (subsequent releases use the CI command):
+
+```bash
+uv run python manage.py shell
+>>> from apps.core.models import Release
+>>> from django.utils import timezone
+>>> Release.objects.create(version="v1.0.0", is_locked=True, locked_at=timezone.now())
+>>> exit()
+```
+
+### 5. Start development server
+
 ```bash
 uv run python manage.py runserver
 ```
 
-The API will be available at `http://127.0.0.1:8000`
+The API is available at `http://127.0.0.1:8000`
 
 ---
 
-### 4. Get Authentication Token
-Visit the Django admin panel at `http://127.0.0.1:8000/admin/` and create a token for your user, or use the admin interface to generate tokens.
+## 🔧 Management Commands
+
+All versioning commands live in `apps/core/management/commands/`.
+
+### Release Management
+
+**Create a new release** (branched from an existing locked one):
+```bash
+uv run python manage.py create_release --release-version v1.1.0 --based-on v1.0.0
+```
+
+**Lock a release** (immutable after this — no edits, no deletes):
+```bash
+uv run python manage.py lock_release --release-version v1.1.0
+```
+
+**Unlock a release** (only before deployment):
+```bash
+uv run python manage.py unlock_release --release-version v1.1.0
+```
+
+**Approve all DRAFT rows** (CI runs this — FUTURE rows are left untouched):
+```bash
+uv run python manage.py approve_release --release-version v1.1.0
+```
+
+**Deprecate a release** (soft delete — data preserved, hidden from API by default):
+```bash
+uv run python manage.py deprecate_release --release-version v1.0.0
+
+# Undo if needed
+uv run python manage.py deprecate_release --release-version v1.0.0 --undo
+```
+
+### Typical CI Flow
+
+```
+# New release
+create_release --release-version v1.1.0 --based-on v1.0.0
+
+# Architects edit data in v1.1.0 (status=DRAFT by default)
+
+# CI approves stable rows
+approve_release --release-version v1.1.0
+
+# CI runs tests against approved data
+pytest --release-version v1.1.0
+
+# Ship it
+lock_release --release-version v1.1.0
+
+# Bug found after deployment? Never modify a locked release — patch instead
+create_release --release-version v1.1.1 --based-on v1.1.0
+```
 
 ---
+
+## 📡 API
+
+### Versioned Endpoints
+
+All versioned endpoints accept a `version` query parameter:
+
+```
+GET /api/first_app/?version=v1.1.0              # all statuses
+GET /api/first_app/?version=v1.1.0&status=approved
+GET /api/first_app/?version=v1.1.0&status=draft
+```
+
+### Release Endpoints
+
+```
+GET  /api/releases/                          # active releases (deprecated hidden)
+GET  /api/releases/?include_deprecated=true  # include deprecated
+GET  /api/releases/<id>/
+POST /api/releases/<id>/lock/                # lock a release (admin only)
+```
 
 ### Advanced Filtering Examples
+
 **Text Field Wildcards:**
-```bash
-# Starts with
-GET /api/items/?name=test*
-
-# Ends with
-GET /api/items/?name=*test
-
-# Contains
-GET /api/items/?name=*test*
-
-# Middle wildcard
-GET /api/items/?name=t*t
+```
+GET /api/items/?name=test*       # starts with
+GET /api/items/?name=*test       # ends with
+GET /api/items/?name=*test*      # contains
 ```
 
 **Number Field Comparisons:**
-```bash
-# Exact match
-GET /api/items/?age=25
-
-# Greater than or equal
-GET /api/items/?age=>=18
-
-# Less than or equal
-GET /api/items/?age=<=65
-
-# Range (inclusive)
-GET /api/items/?age=18-30
+```
+GET /api/items/?age=>=18         # greater than or equal
+GET /api/items/?age=<=65         # less than or equal
+GET /api/items/?age=18-30        # range (inclusive)
 ```
 
 **ForeignKey Lookups:**
-```bash
-# Filter by related text field
+```
 GET /api/items/?category__name=prod*
-
-# Filter by related number field
-GET /api/items/?category__age=>=18
-
-# Nested ForeignKey
 GET /api/items/?category__parent__name=test*
 ```
 
-**Combined Filters:**
+**Combined:**
+```
+GET /api/items/?name=test*&age=>=18&ordering=-created_at&page=1&page_size=20
+```
+
+---
+
+## 🧪 Fetching Data for Tests
+
+Use [`pyrest-model-client`](https://github.com/aviz92/pyrest-model-client) to fetch versioned data from the API in your test projects:
+
 ```bash
-GET /api/items/?name=test*&age=>=18&category__name=prod*&ordering=-created_at&page=1&page_size=20
+python scripts/fetch_release_data.py --release-version v1.1.0
+python scripts/fetch_release_data.py --release-version v1.1.0 --status approved
+python scripts/fetch_release_data.py --release-version v1.1.0 --base-url http://prod-server:8000
+```
+
+Define your models in the script:
+
+```python
+from pyrest_model_client.base import BaseAPIModel
+
+class FirstApp(BaseAPIModel):
+    name: str
+    description: str | None = None
+    status: str | None = None
+    resource_path: str = "first_app"
+
+MODELS = [FirstApp, ...]
+```
+
+The script sends `?version=v1.1.0&status=approved` on every request automatically, handles pagination, and returns typed model instances.
+
+---
+
+## 🏗️ Project Structure
+
+```
+django_basic_app/
+├── apps/
+│   ├── core/                        # Versioning engine
+│   │   ├── models.py                # Release model
+│   │   ├── mixins.py                # VersionedModel + DataStatus
+│   │   ├── services.py              # create_release, lock_release (auto-discovery)
+│   │   ├── views.py                 # ReleaseViewSet, ReleaseFilterMixin
+│   │   └── management/commands/
+│   │       ├── create_release.py
+│   │       ├── lock_release.py
+│   │       ├── unlock_release.py
+│   │       ├── approve_release.py
+│   │       └── deprecate_release.py
+│   └── first_app/                   # Example versioned app
+│       ├── models.py                # class FirstApp(VersionedModel)
+│       ├── serializers.py
+│       ├── views.py
+│       └── urls.py
+│   └── second_app/                  # Example versioned app
+│       ├── models.py                # class SecondAppApp(VersionedModel)
+│       ├── serializers.py
+│       ├── views.py
+│       └── urls.py
+├── scripts/
+│   └── fetch_release_data.py        # pyrest-model-client integration
+└── manage.py
 ```
 
 ---
 
 ## 🤝 Contributing
-If you have a helpful tool, pattern, or improvement to suggest:
-Fork the repo <br>
-Create a new branch <br>
-Submit a pull request <br>
-I welcome additions that promote clean, productive, and maintainable development. <br>
+
+Fork the repo, create a new branch, and submit a pull request. Additions that promote clean, maintainable development are welcome.
 
 ---
 
 ## 🙏 Thanks
-Thanks for exploring this repository! <br>
-Happy coding! <br>
+
+Thanks for exploring this repository! Happy coding.
