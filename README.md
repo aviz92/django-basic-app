@@ -117,7 +117,7 @@ The first release must be created manually via the shell (subsequent releases us
 
 ```bash
 uv run python manage.py shell
->>> from apps.core.models import Release
+>>> from django_versioned_models.models import Release
 >>> from django.utils import timezone
 >>> Release.objects.create(version="v1.0.0", is_locked=True, locked_at=timezone.now())
 >>> exit()

@@ -1,6 +1,6 @@
-from apps.core.mixins import VersionedModel
 from apps.first_app.models import FirstApp
 from django.db import models
+from django_versioned_models.mixins import VersionedModel
 
 
 class SecondApp(VersionedModel):

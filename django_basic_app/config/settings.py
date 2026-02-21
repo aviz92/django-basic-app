@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "schema_graph",
     "django_filters",
-    "apps.core",
+    "django_versioned_models",
     "apps.product",
     "apps.first_app",
     "apps.second_app",

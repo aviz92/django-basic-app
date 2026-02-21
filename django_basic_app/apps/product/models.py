@@ -1,5 +1,5 @@
-from apps.core.mixins import VersionedModel
 from django.db import models
+from django_versioned_models.mixins import VersionedModel
 
 
 class Category(VersionedModel):
