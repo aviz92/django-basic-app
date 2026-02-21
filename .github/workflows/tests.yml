@@ -20,4 +20,6 @@ jobs:
           uv sync
 
       - name: Run tests
+        env:
+          SECRET_DJANGO_KEY: ${{ secrets.SECRET_DJANGO_KEY }}
         run: uv run pytest -v
