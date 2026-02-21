@@ -27,8 +27,20 @@ from apps.department.models import Department
 from apps.department.serializers import DepartmentSerializer
 from apps.employee.models import Employee
 from apps.employee.serializers import EmployeeSerializer
+from django_versioned_models.models import Release
 
 User = get_user_model()
+
+
+def _release() -> Release:
+    """Create a test release (unlocked) for versioned models."""
+    release, _ = Release.objects.get_or_create(
+        version="test-release",
+        defaults={"description": "Test release", "is_locked": False},
+    )
+    return release
+
+
 factory = APIRequestFactory()
 
 
@@ -71,16 +83,17 @@ class TestCRUDUtilsGet(TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
+        self.release = _release()
         self.user = User.objects.create_user(username="testuser", password="testpass123")
 
         self.token = Token.objects.create(user=self.user)
 
         # Create test instances
         self.employee_instances = [
-            Employee.objects.create(name="test1", description="Description 1"),
-            Employee.objects.create(name="test2", description="Description 2"),
-            Employee.objects.create(name="product1", description="Product description"),
-            Employee.objects.create(name="other", description="Other description"),
+            Employee.objects.create(name="test1", description="Description 1", release=self.release),
+            Employee.objects.create(name="test2", description="Description 2", release=self.release),
+            Employee.objects.create(name="product1", description="Product description", release=self.release),
+            Employee.objects.create(name="other", description="Other description", release=self.release),
         ]
 
     def test_get_single_instance(self) -> None:
@@ -165,8 +178,8 @@ class TestCRUDUtilsGet(TestCase):
     def test_get_list_with_foreignkey_lookup(self) -> None:
         """Test filtering with ForeignKey lookup."""
         emp = Employee.objects.get(name="test1")
-        Department.objects.create(name="dept1", employee=emp)
-        Department.objects.create(name="dept2", employee=self.employee_instances[1])
+        Department.objects.create(name="dept1", employee=emp, release=self.release)
+        Department.objects.create(name="dept2", employee=self.employee_instances[1], release=self.release)
 
         request = _make_authenticated_request(
             "GET", "/department/", query_params={"employee__name": "test1"}, token=self.token
@@ -188,13 +201,21 @@ class TestCRUDUtilsPost(TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
+        self.release = _release()
         self.user = User.objects.create_user(username="testuser", password="testpass123")
         self.token = Token.objects.create(user=self.user)
 
     def test_post_create_instance(self) -> None:
         """Test creating a new instance."""
         request = _make_authenticated_request(
-            "POST", "/employee/", data={"name": "New Item", "description": "New Description"}, token=self.token
+            "POST",
+            "/employee/",
+            data={
+                "name": "New Item",
+                "description": "New Description",
+                "release": self.release.pk,
+            },
+            token=self.token,
         )
         response = CRUDUtils.post(
             request=request,
