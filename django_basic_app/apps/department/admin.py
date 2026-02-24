@@ -10,15 +10,6 @@ class DepartmentAdmin(admin.ModelAdmin):
     readonly_fields = ("id", "created_at", "updated_at")
     save_on_top = True
     fieldsets = (
-        ("Timestamps", {"fields": ("created_at", "updated_at")}),
-        (
-            "Basic Info",
-            {
-                "fields": (
-                    "release",
-                    "status",
-                    "name",
-                )
-            },
-        ),
+        ("Global Info", {"fields": ("id", "active", "created_at", "updated_at")}),
+        ("Basic Info", {"fields": ("release", "status", "name")}),
     )
