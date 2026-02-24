@@ -9,9 +9,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
     """Serializer for Employee model."""
 
     name = serializers.CharField(max_length=255, required=True)
-    release = serializers.PrimaryKeyRelatedField(
+
+    release_version = serializers.SlugRelatedField(
+        source="release",
         queryset=Release.objects.all(),
+        slug_field="version",
         required=True,
+        allow_null=True,
+        help_text="Name of the related Release instance.",
     )
     department_name = serializers.SlugRelatedField(
         source="department",
