@@ -34,6 +34,7 @@ dependencies = [
     "django-filter>=25.2",
     "django-models>=1.0",
     "django-schema-graph>=3.1.0",
+    "django-versioned-models==1.0.0",
     "djangorestframework>=3.16.1",
     "pre-commit>=4.5.0",
     "pydantic>=2.12.4",
@@ -44,7 +45,6 @@ dependencies = [
     "setuptools>=80.9.0",
     "tenacity>=9.1.2",
     "wheel>=0.45.1",
-    "django-versioned-models",
 ]
 
 [project.urls]
@@ -56,9 +56,6 @@ Issues = "https://github.com/aviz92/django-basic-app/issues"
 where = ["."]
 # include = ["django_basic_app*"]
 namespaces = false
-
-[tool.uv.sources]
-django-versioned-models = { git = "https://github.com/aviz92/django-versioned-models.git" }
 
 [project.scripts]  # must using "uv sync" or "uv pip install -e ." first
 run_pytest_marker = "scripts.ci.run_pytest_marker:main"
