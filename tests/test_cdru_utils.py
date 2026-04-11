@@ -101,7 +101,7 @@ class TestCRUDUtilsGet(TestCase):
         request = _make_authenticated_request("GET", f"/employee/{self.employee_instances[0].pk}/", token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=Employee,
+            queryset=Employee,
             serializer_class=EmployeeSerializer,
             pk=self.employee_instances[0].pk,
         )
@@ -115,7 +115,7 @@ class TestCRUDUtilsGet(TestCase):
         request = _make_authenticated_request("GET", "/employee/999/", token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=Employee,
+            queryset=Employee,
             serializer_class=EmployeeSerializer,
             pk=999,
         )
@@ -127,7 +127,7 @@ class TestCRUDUtilsGet(TestCase):
         request = _make_authenticated_request("GET", "/employee/", token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=Employee,
+            queryset=Employee,
             serializer_class=EmployeeSerializer,
         )
 
@@ -140,7 +140,7 @@ class TestCRUDUtilsGet(TestCase):
         request = _make_authenticated_request("GET", "/employee/", query_params={"name": "test*"}, token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=Employee,
+            queryset=Employee,
             serializer_class=EmployeeSerializer,
         )
 
@@ -154,7 +154,7 @@ class TestCRUDUtilsGet(TestCase):
         request = _make_authenticated_request("GET", "/employee/", query_params={"name": "*test*"}, token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=Employee,
+            queryset=Employee,
             serializer_class=EmployeeSerializer,
         )
 
@@ -171,7 +171,7 @@ class TestCRUDUtilsGet(TestCase):
             )
             _ = CRUDUtils.get(
                 request=request,
-                model_class=Employee,
+                queryset=Employee,
                 serializer_class=EmployeeSerializer,
             )
 
@@ -187,7 +187,7 @@ class TestCRUDUtilsGet(TestCase):
         request = _make_authenticated_request("GET", "/department/", query_params={"name": "dept1"}, token=self.token)
         response = CRUDUtils.get(
             request=request,
-            model_class=Department,
+            queryset=Department,
             serializer_class=DepartmentSerializer,
         )
 
@@ -214,7 +214,7 @@ class TestCRUDUtilsPost(TestCase):
             data={
                 "name": "New Item",
                 "description": "New Description",
-                "release": self.release.pk,
+                "release_version": self.release.version,
             },
             token=self.token,
         )

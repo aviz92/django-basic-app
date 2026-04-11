@@ -24,11 +24,10 @@ classifiers = [
 
 dependencies = [
     "custom-python-logger>=2.0.13",
-    "drf-easy-crud>=1.0.2",
+    "drf-easy-crud>=2.0.0",
     "django-versioned-models==1.0.0",
     "pytest-plugins>=2.0.2",
     "python-base-toolkit>=1.0.3",
-
     "beautifulsoup4>=4.14.3",
     "django>=5.2.11",
     "django-filter>=25.2",

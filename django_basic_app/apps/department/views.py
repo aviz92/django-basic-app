@@ -23,7 +23,7 @@ class DepartmentListView(generics.ListCreateAPIView):
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Retrieve a list of all Department instances."""
-        return CRUDUtils.get(request=request, model_class=Department, serializer_class=DepartmentSerializer, **kwargs)
+        return CRUDUtils.get(request=request, queryset=Department, serializer_class=DepartmentSerializer, **kwargs)
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Create a new Department instance."""
@@ -40,16 +40,16 @@ class DepartmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Retrieve a specific Department instance by primary key."""
-        return CRUDUtils.get(request=request, model_class=Department, serializer_class=DepartmentSerializer, **kwargs)
+        return CRUDUtils.get(request=request, queryset=Department, serializer_class=DepartmentSerializer, **kwargs)
 
     def put(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Fully update a Department instance by primary key."""
-        return CRUDUtils.put(request=request, model_class=Department, serializer_class=DepartmentSerializer, **kwargs)
+        return CRUDUtils.put(request=request, queryset=Department, serializer_class=DepartmentSerializer, **kwargs)
 
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Partially update a Department instance by primary key."""
-        return CRUDUtils.patch(request=request, model_class=Department, serializer_class=DepartmentSerializer, **kwargs)
+        return CRUDUtils.patch(request=request, queryset=Department, serializer_class=DepartmentSerializer, **kwargs)
 
     def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Delete a Department instance by primary key."""
-        return CRUDUtils.delete(request=request, model_class=Department, **kwargs)
+        return CRUDUtils.delete(request=request, queryset=Department, **kwargs)

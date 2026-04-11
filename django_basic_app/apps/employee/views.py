@@ -23,7 +23,7 @@ class EmployeeListView(generics.ListCreateAPIView):
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Retrieve a list of all Employee instances."""
-        return CRUDUtils.get(request=request, model_class=Employee, serializer_class=EmployeeSerializer, **kwargs)
+        return CRUDUtils.get(request=request, queryset=Employee, serializer_class=EmployeeSerializer, **kwargs)
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Create a new Employee instance."""
@@ -40,16 +40,16 @@ class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Retrieve a specific Employee instance by primary key."""
-        return CRUDUtils.get(request=request, model_class=Employee, serializer_class=EmployeeSerializer, **kwargs)
+        return CRUDUtils.get(request=request, queryset=Employee, serializer_class=EmployeeSerializer, **kwargs)
 
     def put(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Fully update an Employee instance by primary key."""
-        return CRUDUtils.put(request=request, model_class=Employee, serializer_class=EmployeeSerializer, **kwargs)
+        return CRUDUtils.put(request=request, queryset=Employee, serializer_class=EmployeeSerializer, **kwargs)
 
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Partially update an Employee instance by primary key."""
-        return CRUDUtils.patch(request=request, model_class=Employee, serializer_class=EmployeeSerializer, **kwargs)
+        return CRUDUtils.patch(request=request, queryset=Employee, serializer_class=EmployeeSerializer, **kwargs)
 
     def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Delete an Employee instance by primary key."""
-        return CRUDUtils.delete(request=request, model_class=Employee, **kwargs)
+        return CRUDUtils.delete(request=request, queryset=Employee, **kwargs)
