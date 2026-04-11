@@ -21,11 +21,11 @@ class EmployeeListView(generics.ListCreateAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def get(self, request: Request, *_args: Any, **kwargs: Any) -> Response:
         """Retrieve a list of all Employee instances."""
         return CRUDUtils.get(request=request, queryset=Employee, serializer_class=EmployeeSerializer, **kwargs)
 
-    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def post(self, request: Request, *_args: Any, **_kwargs: Any) -> Response:
         """Create a new Employee instance."""
         return CRUDUtils.post(request=request, serializer_class=EmployeeSerializer)
 
@@ -38,18 +38,18 @@ class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def get(self, request: Request, *_args: Any, **kwargs: Any) -> Response:
         """Retrieve a specific Employee instance by primary key."""
         return CRUDUtils.get(request=request, queryset=Employee, serializer_class=EmployeeSerializer, **kwargs)
 
-    def put(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def put(self, request: Request, *_args: Any, **kwargs: Any) -> Response:
         """Fully update an Employee instance by primary key."""
         return CRUDUtils.put(request=request, queryset=Employee, serializer_class=EmployeeSerializer, **kwargs)
 
-    def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def patch(self, request: Request, *_args: Any, **kwargs: Any) -> Response:
         """Partially update an Employee instance by primary key."""
         return CRUDUtils.patch(request=request, queryset=Employee, serializer_class=EmployeeSerializer, **kwargs)
 
-    def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def delete(self, request: Request, *_args: Any, **kwargs: Any) -> Response:
         """Delete an Employee instance by primary key."""
         return CRUDUtils.delete(request=request, queryset=Employee, **kwargs)

@@ -23,11 +23,14 @@ django_basic_app_path = project_root / "django_basic_app"
 if str(django_basic_app_path) not in sys.path:
     sys.path.insert(0, str(django_basic_app_path))
 
-from apps.department.models import Department
-from apps.department.serializers import DepartmentSerializer
-from apps.employee.models import Employee
-from apps.employee.serializers import EmployeeSerializer
-from django_versioned_models.models import Release
+# pylint: disable=wrong-import-position
+from apps.department.models import Department  # noqa: E402
+from apps.department.serializers import DepartmentSerializer  # noqa: E402
+from apps.employee.models import Employee  # noqa: E402
+from apps.employee.serializers import EmployeeSerializer  # noqa: E402
+from django_versioned_models.models import Release  # noqa: E402
+
+# pylint: enable=wrong-import-position
 
 User = get_user_model()
 
